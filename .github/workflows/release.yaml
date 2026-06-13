@@ -3,13 +3,13 @@
 # the GitHub release and vX.Y.Z tag. The publish job then re-validates the
 # released commit (the committed dist/ must reproduce from src/) and moves
 # the floating major tag (v1, v2, ...) consumers reference.
-name: release
+name: Release
 
 on:
   push:
     branches: [main]
 
-permissions: {} # granted per job
+permissions: {}
 
 concurrency:
   group: release
@@ -18,9 +18,12 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # release + tag
-      issues: write # release PR labels go through the issues API
-      pull-requests: write # the release PR itself
+      # create github release and associated tag
+      contents: write
+      # create release pull request labels through the issues api
+      issues: write
+      # create the release pull request
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release-please.outputs.release_created }}
       tag_name: ${{ steps.release-please.outputs.tag_name }}
@@ -36,7 +39,8 @@ jobs:
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write # move the floating major tag
+      # move the floating major tag
+      contents: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:

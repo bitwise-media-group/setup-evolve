@@ -1,7 +1,7 @@
 # CI — lint, typecheck, unit tests, a dist-reproducibility gate (the committed
 # dist/ must match a fresh build of src/), real-crypto integration tests, and
 # an e2e matrix that runs the action for real against evolve's releases.
-name: ci
+name: Continuous integration
 
 on:
   push:
@@ -45,14 +45,14 @@ jobs:
       - name: Real sigstore verification against live release assets
         run: npx vitest run __tests__/integration
         env:
-          RUN_INTEGRATION: '1'
+          RUN_INTEGRATION: "1"
 
   e2e:
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        version: [latest, 0.1.0, '~>0', '>=0.1, <1']
+        version: [latest, 0.1.0, "~>0", ">=0.1, <1"]
         include:
           - os: ubuntu-latest
             version: latest
