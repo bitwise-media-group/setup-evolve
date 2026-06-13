@@ -42,6 +42,8 @@ jobs:
           languages: ${{ matrix.language }}
           # never execute pull-request code with a writeable token (security-events: write)
           build-mode: none
+          # exclude the bundled dist/ output; its sources are analysed via src/
+          config-file: ./.github/codeql/codeql-config.yaml
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2

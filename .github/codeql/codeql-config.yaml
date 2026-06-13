@@ -1,0 +1,10 @@
+# CodeQL analysis configuration.
+#
+# dist/ is the Rollup-bundled Action output (src + vendored dependencies inlined; see
+# rollup.config.js). Its sources are already analysed directly via src/, so scanning the
+# bundle adds no coverage and only surfaces false positives from third-party code — e.g.
+# undici's RFC 6455 WebSocket handshake SHA-1 (security/code-scanning/1.md). Exclude it.
+name: "setup-evolve CodeQL config"
+
+paths-ignore:
+  - dist
