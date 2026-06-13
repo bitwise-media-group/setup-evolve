@@ -5,5 +5,14 @@ export default defineConfig({
     include: ['__tests__/**/*.test.ts'],
     environment: 'node',
     testTimeout: 120_000,
+    coverage: {
+      provider: 'v8',
+      // cobertura is what GitHub's code-quality upload ingests; text is for
+      // the local/CI console summary.
+      reporter: ['text', 'cobertura'],
+      // Measure the shipped source only — not tests, configs, or the bundled
+      // dist/ artifact.
+      include: ['src/**/*.ts'],
+    },
   },
 })

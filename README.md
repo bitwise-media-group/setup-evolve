@@ -92,7 +92,7 @@ You can reproduce the action's checks out-of-band:
 ```sh
 gh attestation verify evolve_0.1.0_linux_amd64.tar.gz --owner bitwise-media-group
 cosign verify-blob \
-  --certificate-identity 'https://github.com/bitwise-media-group/evolve/.github/workflows/release.yaml@refs/heads/main' \
+  --certificate-identity https://github.com/bitwise-media-group/evolve/.github/workflows/release.yaml@refs/heads/main \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   --bundle evolve_linux_amd64.sigstore.json \
   ./evolve

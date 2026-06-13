@@ -1,4 +1,4 @@
-# CI — lint, typecheck, unit tests, a dist-reproducibility gate (the committed
+# Lint, typecheck, unit tests, a dist-reproducibility gate (the committed
 # dist/ must match a fresh build of src/), real-crypto integration tests, and
 # an e2e matrix that runs the action for real against evolve's releases.
 name: Continuous integration
@@ -7,13 +7,16 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: ["main", "releases/*"]
 
-permissions: {} # granted per job
+# granted per job
+permissions: {}
 
 jobs:
   check:
     runs-on: ubuntu-latest
     permissions:
+      # check out the repository
       contents: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -24,16 +27,50 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run typecheck
-      - run: npm test
+      - run: npm run test:coverage
       - run: npm run build
       # The bundle consumers run is the one in git: a dist/ that does not
       # reproduce from src/ is either a stale build or a tampered artifact.
       - name: Verify dist/ is up to date
         run: git diff --exit-code -- dist
+      # Hand the Cobertura report to the coverage job, which holds the
+      # code-quality:write token. Forked PRs can't upload, so skip there.
+      - name: Upload coverage artifact
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-report
+          path: coverage/cobertura-coverage.xml
+          if-no-files-found: error
+
+  # Publishes the Cobertura report to GitHub's code-quality dashboard. Split out
+  # from `check` so the code-quality:write token is never present in the job
+  # that runs PR-supplied code (npm install scripts, test code).
+  coverage:
+    needs: check
+    if:
+      ${{ !cancelled() && needs.check.result == 'success' && (github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    permissions:
+      # download artifacts
+      contents: read
+      # publish code quality results
+      code-quality: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: coverage-report
+      - uses: actions/upload-code-coverage@abb5995db9e0199b0e2bb9dbd136fce4cb1ec4d3 # v1
+        with:
+          file: cobertura-coverage.xml
+          language: TypeScript
+          label: code-coverage/vitest
 
   integration:
     runs-on: ubuntu-latest
     permissions:
+      # checkout the repository
       contents: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -59,6 +96,7 @@ jobs:
             pre-release: true
     runs-on: ${{ matrix.os }}
     permissions:
+      # checkout the repository
       contents: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -105,6 +143,7 @@ jobs:
   e2e-cache-seed:
     runs-on: ubuntu-latest
     permissions:
+      # checkout the repository
       contents: read
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3

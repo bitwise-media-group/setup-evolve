@@ -10,12 +10,14 @@
   },
   "scripts": {
     "build": "rollup --config rollup.config.js",
-    "check": "biome check .",
-    "check:fix": "biome check --write .",
+    "check": "biome check . && npm run lint:md",
+    "check:fix": "biome check --write . && npm run lint:md -- --fix",
     "format": "prettier --write \"**/*.md\"",
+    "lint:md": "markdownlint-cli2",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "all": "npm run check && npm run typecheck && npm run test && npm run build"
   },
   "repository": {
@@ -42,6 +44,8 @@
     "@types/node": "25.9.3",
     "@types/semver": "7.7.1",
     "@types/snappyjs": "0.7.1",
+    "@vitest/coverage-v8": "4.1.8",
+    "markdownlint-cli2": "0.22.1",
     "prettier": "3.8.4",
     "rollup": "4.61.1",
     "tslib": "2.8.1",
