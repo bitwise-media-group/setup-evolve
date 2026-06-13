@@ -1,6 +1,6 @@
 {
   "name": "setup-evolve",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "GitHub Action to install the evolve CLI with supply-chain verification",
   "private": true,
   "type": "module",
