@@ -1,14 +1,15 @@
-# Release pipeline — release-please watches main and keeps a release PR
-# current from the Conventional Commit history; when that PR merges it cuts
-# the GitHub release and vX.Y.Z tag. The publish job then re-validates the
-# released commit (the committed dist/ must reproduce from src/) and moves
-# the floating major tag (v1, v2, ...) consumers reference.
+# Release-please watches main and keeps a release PR current from the
+# Conventional Commit history; when that PR merges it cuts the GitHub release
+# and vX.Y.Z tag. The publish job then re-validates the released commit (the
+# committed dist/ must reproduce from src/) and moves the floating major tag
+# (v1, v2, ...) consumers reference.
 name: Release
 
 on:
   push:
     branches: [main]
 
+# granted per job
 permissions: {}
 
 concurrency:
