@@ -9,7 +9,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { type Bundle, createVerifier, type VerifyOptions } from 'sigstore'
 import { describe, expect, it } from 'vitest'
-import { VERIFY_POLICY } from '../../src/verify/sigstore'
+import { SLSA_PREDICATE_TYPE } from '../../src/constants'
+import { createOctokit, fetchAttestations } from '../../src/github'
+import { parseChecksums } from '../../src/verify/digests'
+import { getVerifier, VERIFY_POLICY, verifySlsaProvenance } from '../../src/verify/sigstore'
 
 const VERSION = '0.1.0'
 const PLATFORMS: Record<string, { asset: string; bundle: string }> = {
@@ -64,4 +67,33 @@ describe.skipIf(!process.env.RUN_INTEGRATION || !target)('real sigstore verifica
     tampered.writeUInt8(tampered.readUInt8(0) ^ 0xff, 0)
     expect(() => verifier.verify(bundle, tampered)).toThrow()
   })
+
+  // Exercises the full live attestation path introduced by API version
+  // 2026-03-10: versioned API request, bundle_url blob download, snappy
+  // decompression, then real SLSA provenance verification. Needs a token
+  // because @actions/github refuses to build an unauthenticated client.
+  it.skipIf(!process.env.GITHUB_TOKEN && !process.env.GH_TOKEN)(
+    'fetches live attestations via bundle_url and verifies provenance',
+    async () => {
+      if (!target) throw new Error('unreachable')
+      if (process.env.SIGSTORE_TUF_FORCE_CACHE === '1') {
+        const dir = mkdtempSync(join(process.env.TMPDIR ?? tmpdir(), 'evolve-it-'))
+        await getVerifier({ tufForceCache: true, tufCachePath: join(dir, 'tuf-cache') })
+      }
+      const res = await fetch(
+        `https://github.com/bitwise-media-group/evolve/releases/download/v${VERSION}/checksums.txt`,
+      )
+      expect(res.ok).toBe(true)
+      const digest = parseChecksums(await res.text()).get(target.asset)
+      if (!digest) throw new Error(`no checksum entry for ${target.asset}`)
+
+      const octokit = createOctokit(process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? '')
+      const bundles = await fetchAttestations(octokit, digest, SLSA_PREDICATE_TYPE)
+      expect(bundles.length).toBeGreaterThan(0)
+
+      const proof = await verifySlsaProvenance(bundles, target.asset, digest)
+      expect(proof.workflowRepository).toBe('https://github.com/bitwise-media-group/evolve')
+      expect(proof.workflowPath).toBe('.github/workflows/release.yaml')
+    },
+  )
 })

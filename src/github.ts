@@ -1,5 +1,6 @@
 import * as github from '@actions/github'
-import { EVOLVE_OWNER, EVOLVE_REPO } from './constants'
+import { uncompress } from 'snappyjs'
+import { EVOLVE_OWNER, EVOLVE_REPO, GITHUB_API_VERSION } from './constants'
 
 export type Octokit = ReturnType<typeof github.getOctokit>
 
@@ -75,8 +76,9 @@ export function findAsset(release: Release, name: string): ReleaseAsset {
 
 // Fetches sigstore bundles attested for the given subject digest, filtered
 // server-side by predicate type. Returns the raw serialized bundles.
-// NOTE: GitHub has marked this endpoint deprecated with removal scheduled for
-// 2028-03-10; gh CLI still uses it. Revisit when a successor API is announced.
+// As of API version 2026-03-10 the response carries `bundle_url` instead of an
+// inline `bundle`; the inline field is still honored as a fallback (matching
+// gh CLI) in case a response predates the version cutover.
 export async function fetchAttestations(
   octokit: Octokit,
   digestHex: string,
@@ -88,7 +90,27 @@ export async function fetchAttestations(
     subject_digest: `sha256:${digestHex}`,
     predicate_type: predicateType,
     per_page: 100,
+    headers: { 'x-github-api-version': GITHUB_API_VERSION },
   })
-  // biome-ignore lint/suspicious/noExplicitAny: GitHub API payloads are mapped defensively
-  return (res.data.attestations ?? []).map((a: any) => a.bundle)
+  return Promise.all(
+    // biome-ignore lint/suspicious/noExplicitAny: GitHub API payloads are mapped defensively
+    (res.data.attestations ?? []).map((a: any) => {
+      if (a.bundle != null) return a.bundle
+      if (typeof a.bundle_url !== 'string' || a.bundle_url === '') {
+        throw new Error('attestation has neither a bundle nor a bundle URL')
+      }
+      return fetchBundle(a.bundle_url)
+    }),
+  )
+}
+
+// `bundle_url` is a pre-signed blob-storage URL: fetched without GitHub
+// credentials, and the body is a snappy-compressed JSON sigstore bundle.
+async function fetchBundle(bundleUrl: string): Promise<unknown> {
+  const res = await fetch(bundleUrl)
+  if (!res.ok) {
+    throw new Error(`attestation bundle download failed with status ${res.status}`)
+  }
+  const compressed = new Uint8Array(await res.arrayBuffer())
+  return JSON.parse(Buffer.from(uncompress(compressed)).toString('utf8'))
 }

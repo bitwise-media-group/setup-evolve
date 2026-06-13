@@ -2,6 +2,11 @@ export const EVOLVE_OWNER = 'bitwise-media-group'
 export const EVOLVE_REPO = 'evolve'
 export const TOOL_NAME = 'evolve'
 
+// REST API version for attestation requests. 2026-03-10 drops the inline
+// `bundle` field (bundles are fetched via `bundle_url` instead); the prior
+// version sunsets 2028-03-10.
+export const GITHUB_API_VERSION = '2026-03-10'
+
 // Bump whenever the cached directory layout or verification material changes;
 // invalidates every previously saved Actions cache entry.
 export const CACHE_SCHEMA_VERSION = '1'
