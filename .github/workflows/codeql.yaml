@@ -1,5 +1,7 @@
-# Runs CodeQL security analysis on github actions, typescript, and the resulting
-# javascript.
+# Thin caller: CodeQL security analysis lives in the shared reusable workflow,
+# which scans the repo's GitHub Actions and its JavaScript/TypeScript build-free.
+# This caller owns the triggers and grants the analyze permission ceiling; the
+# config-file excludes the bundled dist/ (its sources are analysed via src/).
 name: CodeQL analysis
 
 on:
@@ -15,10 +17,8 @@ permissions: {}
 
 jobs:
   analyze:
-    name: Analyze (${{ matrix.language }})
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
     permissions:
-      # required for all workflows
+      # required for all workflows: upload analysis results to code scanning
       security-events: write
       # required to fetch internal or private CodeQL packs
       packages: read
@@ -26,26 +26,7 @@ jobs:
       actions: read
       # checkout the repository
       contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - language: actions
-          - language: javascript-typescript
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
-        with:
-          languages: ${{ matrix.language }}
-          # never execute pull-request code with a writeable token (security-events: write)
-          build-mode: none
-          # exclude the bundled dist/ output; its sources are analysed via src/
-          config-file: ./.github/codeql/codeql-config.yaml
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
-        with:
-          category: "/language:${{ matrix.language }}"
+    uses: bitwise-media-group/github-workflows/.github/workflows/codeql-node.yaml@42af0238cffd9caa426fbc6d4721b492f28c914a # v1.0.0
+    with:
+      # exclude the bundled dist/ output; its sources are analysed via src/
+      config-file: ./.github/codeql/codeql-config.yaml

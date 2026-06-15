@@ -1,4 +1,5 @@
 node_modules/
 coverage/
+test-report.junit.xml
 *.tsbuildinfo
 .DS_Store

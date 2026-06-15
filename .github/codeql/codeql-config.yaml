@@ -1,10 +1,20 @@
-# CodeQL analysis configuration.
+# CodeQL analysis configuration consumed by the shared codeql-node reusable
+# workflow (via the caller's config-file input).
+#
+# Security only: the security-extended suite runs the security queries (a superset
+# of the default) without the maintainability/reliability "quality" queries. Do
+# NOT enable the repo-level "Code quality" default-setup feature (Settings >
+# Security > Code quality): it ignores this config file and would scan the
+# committed dist/ bundle.
 #
 # dist/ is the Rollup-bundled Action output (src + vendored dependencies inlined; see
 # rollup.config.js). Its sources are already analysed directly via src/, so scanning the
 # bundle adds no coverage and only surfaces false positives from third-party code — e.g.
 # undici's RFC 6455 WebSocket handshake SHA-1 (security/code-scanning/1.md). Exclude it.
 name: "setup-evolve CodeQL config"
+
+queries:
+  - uses: security-extended
 
 paths-ignore:
   - dist
