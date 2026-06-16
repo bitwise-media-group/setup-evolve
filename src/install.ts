@@ -57,11 +57,13 @@ export async function downloadAndVerify(
 
   const extractDir = await extractArchive(archivePath, platform.os)
   const binaryPath = path.join(extractDir, binaryName(platform.os))
-  await fs.access(binaryPath)
+  // Read the extracted binary directly rather than probing with fs.access
+  // first: a separate check-then-use is a TOCTOU race, and readFile already
+  // throws (ENOENT) if extraction did not produce the expected binary.
+  const binary = await fs.readFile(binaryPath)
 
   const bundlePath = await downloadReleaseAsset(sigBundleAsset, token)
   const bundleJson: unknown = JSON.parse(await fs.readFile(bundlePath, 'utf8'))
-  const binary = await fs.readFile(binaryPath)
   const cosign = await verifyCosignBundle(bundleJson, binary)
   core.info(
     `✓ cosign signature over the binary verified (signer: ${cosign.subjectAlternativeName}, Rekor index: ${cosign.rekorLogIndex})`,
