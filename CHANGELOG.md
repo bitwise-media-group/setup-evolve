@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/bitwise-media-group/setup-evolve/compare/v1.0.1...v1.0.2) (2026-06-24)
+
+
+### Bug Fixes
+
+* accept reusable-workflow cert identity for evolve releases ([4971fdc](https://github.com/bitwise-media-group/setup-evolve/commit/4971fdc7fc28c6360c07734da78c4cf07afe2818)), closes [#7](https://github.com/bitwise-media-group/setup-evolve/issues/7)
+
 ## [1.0.1](https://github.com/bitwise-media-group/setup-evolve/compare/v1.0.0...v1.0.1) (2026-06-16)
 
 
