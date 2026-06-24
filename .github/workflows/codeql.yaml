@@ -1,7 +1,12 @@
-# Thin caller: CodeQL security analysis lives in the shared reusable workflow,
-# which scans the repo's GitHub Actions and its JavaScript/TypeScript build-free.
-# This caller owns the triggers and grants the analyze permission ceiling; the
+# Thin caller: CodeQL security analysis lives in the org's reusable security
+# workflow, which scans the repo's GitHub Actions and its JavaScript/TypeScript
+# build-free (languages detected from the repo root: actions + package.json). This
+# caller owns the triggers and grants the analyze permission ceiling; the
 # config-file excludes the bundled dist/ (its sources are analysed via src/).
+#
+# Build-free, so this needs no canonical Makefile — it moves to v3 ahead of the
+# ci/release callers, which stay on v1 until the Makefile lands (see
+# bitwise-media-group/setup-evolve#10).
 name: CodeQL analysis
 
 on:
@@ -26,7 +31,7 @@ jobs:
       actions: read
       # checkout the repository
       contents: read
-    uses: bitwise-media-group/github-workflows/.github/workflows/codeql-node.yaml@077a003a620f49bd0062c73fc761dbea05d7fb70 # v1.1.0
+    uses: bitwise-media-group/github-workflows/.github/workflows/security.yaml@ef97ca56a3a90f9f35556402e0c7478307edcbb9 # v3.0.0
     with:
       # exclude the bundled dist/ output; its sources are analysed via src/
       config-file: ./.github/codeql/codeql-config.yaml
