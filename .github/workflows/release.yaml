@@ -23,4 +23,4 @@ jobs:
       issues: write
       # release-please opens the release pull request
       pull-requests: write
-    uses: bitwise-media-group/github-workflows/.github/workflows/release-actions.yaml@077a003a620f49bd0062c73fc761dbea05d7fb70 # v1.1.0
+    uses: bitwise-media-group/github-workflows/.github/workflows/release-actions.yaml@ef97ca56a3a90f9f35556402e0c7478307edcbb9 # v3.0.0
