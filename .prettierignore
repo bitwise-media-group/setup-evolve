@@ -1,2 +1,6 @@
+# agent cruft
 .claude/
+# machine-written distribution
 dist/
+# machine-written by release-please, not house prose (mirrors .markdownlint-cli2.yaml)
+CHANGELOG.md
