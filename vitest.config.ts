@@ -5,14 +5,15 @@ export default defineConfig({
     include: ['__tests__/**/*.test.ts'],
     environment: 'node',
     testTimeout: 120_000,
-    // default for the local/CI console; junit feeds the shared ci-actions
-    // workflow's Codecov test-results upload (it reads test-report.junit.xml).
-    reporters: ['default', 'junit'],
-    outputFile: { junit: 'test-report.junit.xml' },
+    // In CI, also emit a JUnit report for Codecov Test Analytics; locally the
+    // default reporter is enough, so we don't litter the tree with XML. The path
+    // matches what the reusable CI workflow uploads (coverage/junit.xml).
+    reporters: process.env.CI ? ['default', 'junit'] : ['default'],
+    outputFile: { junit: 'coverage/junit.xml' },
     coverage: {
       provider: 'v8',
-      // cobertura is what the shared ci-actions workflow uploads to Codecov;
-      // text is for the local/CI console summary.
+      // cobertura is the format Codecov ingests; text is for the local/CI
+      // console summary.
       reporter: ['text', 'cobertura'],
       // Measure the shipped source only — not tests, configs, or the bundled
       // dist/ artifact.

@@ -1,33 +1,37 @@
-# Thin caller: the fast-forward merge flow lives in the shared reusable workflow —
-# both `/merge` (merge an approved, green PR now) and set-and-forget auto-merge
-# (`/auto-merge`, or add the `auto-merge` label, and it fast-forwards the moment it
-# is approved and every required check is green) in one workflow. Either way the
-# base branch is fast-forwarded to the PR head: the commit objects are untouched, so
-# the original signature is preserved and release-please sees each Conventional
-# Commit individually. This replaces the previous split merge.yaml + auto-merge.yaml
-# — v3 unifies them into a single reusable workflow.
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+
+# Caller for the reusable merge workflow, which drives both fast-forward merge flows:
+# a maintainer comments `/merge` to fast-forward an approved, green PR now, or arms
+# auto-merge (`/auto-merge` comment or the `auto-merge` label) to merge it automatically
+# once approved and green. Both run the ff-merge action, so every commit keeps its
+# signature and release-please still sees each Conventional Commit individually.
+# (Supersedes the previous split merge.yaml + auto-merge.yaml.)
 #
-# Every trigger here is one that does NOT attach a check run to the PR
-# (issue_comment, workflow_run, schedule), so the merge machinery leaves no
-# skipped-job clutter on the PR's checks list. The approval signal is carried by the
-# companion merge-review-ack.yaml (its single job is the only check this system
-# adds) and re-enters via workflow_run. The `workflows:` list names every workflow
-# that must pass before merging — this repo's CI and CodeQL — plus "Merge Review
-# Ack"; whichever finishes last triggers the attempt, and ff-merge re-verifies all
-# checks. The schedule sweeps armed PRs as a backstop.
+# Every trigger is one that does NOT attach a check run to the PR (issue_comment,
+# workflow_run, schedule), so no skipped-job clutter lands on the PR's checks list. The
+# workflow_run list names every check that must be green -- "Continuous Integration" and
+# "Security Analysis" -- plus "Merge Review Ack", whose completion turns an approval into
+# a merge attempt (fork and same-repo alike); whichever finishes last triggers it, and
+# ff-merge re-verifies all checks before moving the ref. The scheduled sweep backstops any
+# missed trigger.
 #
-# Org prerequisites (one-time, see bitwise-media-group/ff-merge): the
-# FF_MERGE_CLIENT_ID variable + FF_MERGE_PRIVATE_KEY secret, and the "FF Merge"
-# App installed on this repo and in main's ruleset bypass list.
+# Requires branch protection that requires PR review (so an approval sets the review
+# decision). Org prerequisites (one-time -- see bitwise-media-group/ff-merge): the
+# FF_MERGE_CLIENT_ID variable + FF_MERGE_PRIVATE_KEY secret, and the "FF Merge" App
+# installed on this repo and in main's ruleset bypass list.
+#
+# Pinned to a full commit SHA; Dependabot keeps the pin fresh.
 name: Merge
 
 on:
   issue_comment:
     types: [created]
   workflow_run:
-    workflows: ["Continuous integration", "CodeQL analysis", "Merge Review Ack"]
+    workflows: ["Continuous Integration", "Security Analysis", "Merge Review Ack"]
     types: [completed]
   schedule:
+    # Backstop sweep of armed PRs for any missed event trigger.
     - cron: "17 * * * *"
 
 # the App token does the privileged work; the caller grants nothing
@@ -35,7 +39,7 @@ permissions: {}
 
 jobs:
   merge:
-    uses: bitwise-media-group/github-workflows/.github/workflows/merge.yaml@ef97ca56a3a90f9f35556402e0c7478307edcbb9 # v3.0.0
+    uses: bitwise-media-group/github-workflows/.github/workflows/merge.yaml@a28e6738bc4f912322f9e66e9e90e7de789c4ad3 # v4.3.1
     with:
       app-client-id: ${{ vars.FF_MERGE_CLIENT_ID }}
     secrets:

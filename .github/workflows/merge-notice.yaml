@@ -1,11 +1,15 @@
-# Thin caller: posts a one-time comment when a PR is opened, explaining this repo
-# merges via `/merge` (see merge.yaml). The reusable workflow only posts a static
-# comment with a pull-requests:write token.
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+
+# Caller for the reusable merge-notice workflow. When a PR is opened it posts a one-time
+# comment explaining this repo merges via `/merge` (see merge.yaml).
 #
-# pull_request_target (not pull_request) so the notice also reaches fork PRs; the
-# elevated context is safe because the reusable workflow never checks out or runs
-# PR code. No secret needed.
-name: Fast-forward merge notice
+# pull_request_target (not pull_request) so the notice also reaches fork PRs; the reusable
+# workflow only posts a static comment with a pull-requests:write token, so the elevated
+# context is safe. No secret needed.
+#
+# Pinned to a full commit SHA; Dependabot keeps the pin fresh.
+name: Merge Notice
 
 on:
   pull_request_target:
@@ -17,6 +21,6 @@ permissions:
 
 jobs:
   notice:
-    uses: bitwise-media-group/github-workflows/.github/workflows/merge-notice.yaml@077a003a620f49bd0062c73fc761dbea05d7fb70 # v1.1.0
+    uses: bitwise-media-group/github-workflows/.github/workflows/merge-notice.yaml@a28e6738bc4f912322f9e66e9e90e7de789c4ad3 # v4.3.1
     with:
       pr-number: ${{ github.event.pull_request.number }}

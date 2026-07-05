@@ -1,26 +1,49 @@
-# Thin caller: the release pipeline lives in the shared reusable workflow.
-# Release-please watches main and keeps a release PR current from the
-# Conventional Commit history; when that PR merges it cuts the GitHub release and
-# vX.Y.Z tag, then the publish job re-validates the released commit (the
-# committed dist/ must reproduce from src/) and moves the floating major tag
-# (v1, v2, ...) consumers reference. release-please auto-detects this repo's
-# release-please-config.json + .release-please-manifest.json.
+# Copyright 2026 BitWise Media Group Ltd
+# SPDX-License-Identifier: MIT
+
+# Caller for the reusable release workflow. It owns the push trigger and grants the
+# release permissions; github-workflows/release.yaml runs release-please (release-type
+# node) and -- because vanity-tags is true -- moves the floating v1 / v1.1 tags that
+# consumers of the setup-evolve action pin. A committed dist/ is verified in CI, not
+# here.
+#
+# Pinned to a full commit SHA; Dependabot keeps the pin fresh.
 name: Release
 
 on:
   push:
     branches: [main]
 
-# granted per job
-permissions: {}
+# Ceiling for the reusable workflow's release-please + goreleaser/docs/publish jobs.
+# GitHub resolves a reusable workflow's permissions as the union of every job and ignores
+# `if:`, so grant every scope below even though the goreleaser and docs jobs are skipped
+# here (no .goreleaser.yaml, no zensical.toml) -- a missing scope startup-fails the run.
+permissions:
+  # release-please cuts the release/tag; the vanity-tags job moves v1 / v1.1
+  contents: write
+  # release-please creates pr labels via the issues api
+  issues: write
+  # release-please opens the release pull request
+  pull-requests: write
+  # cosign keyless signing (goreleaser) + the docs job's Pages OIDC deploy
+  id-token: write
+  # github build-provenance attestation
+  attestations: write
+  # artifact storage record for the attestation
+  artifact-metadata: write
+  # publish the docs site to GitHub Pages (docs job, gated on a zensical.toml)
+  pages: write
 
 jobs:
   release:
-    permissions:
-      # create the github release + tag, and move the floating major tag
-      contents: write
-      # release-please creates pr labels through the issues api
-      issues: write
-      # release-please opens the release pull request
-      pull-requests: write
-    uses: bitwise-media-group/github-workflows/.github/workflows/release-actions.yaml@077a003a620f49bd0062c73fc761dbea05d7fb70 # v1.1.0
+    uses: bitwise-media-group/github-workflows/.github/workflows/release.yaml@a28e6738bc4f912322f9e66e9e90e7de789c4ad3 # v4.3.1
+    with:
+      # move the floating v1 / v1.1 tags consumers of the setup-evolve action pin
+      vanity-tags: true
+      # Author the release PR as the "FF Merge" App (not the default GITHUB_TOKEN) so its
+      # branch push emits workflow_run events -- otherwise the auto-merge in merge.yaml
+      # (keyed on workflow_run) never retriggers when the release PR goes green and the PR
+      # only merges on the hourly sweep.
+      app-client-id: ${{ vars.FF_MERGE_CLIENT_ID }}
+    secrets:
+      app-private-key: ${{ secrets.FF_MERGE_PRIVATE_KEY }}

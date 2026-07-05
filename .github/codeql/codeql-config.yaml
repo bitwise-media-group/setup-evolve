@@ -1,5 +1,5 @@
-# CodeQL analysis configuration consumed by the shared codeql-node reusable
-# workflow (via the caller's config-file input).
+# CodeQL analysis configuration consumed by the shared security reusable
+# workflow (via the caller's config-file input in .github/workflows/security.yaml).
 #
 # Security only: the security-extended suite runs the security queries (a superset
 # of the default) without the maintainability/reliability "quality" queries. Do
