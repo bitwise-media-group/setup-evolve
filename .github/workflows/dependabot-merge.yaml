@@ -4,7 +4,7 @@
 # Caller for the reusable Dependabot auto-merge workflow. When a Dependabot PR's checks
 # finish green, the reusable workflow approves it if it is a minor or patch update and
 # merges it via the ff-merge action (major updates wait for a human). This keeps the
-# reusable-workflow SHA pins, npm deps, and the make/ submodule fresh with no human in
+# reusable-workflow SHA pins, npm deps, and the toolchain submodule (.mise/) fresh with no human in
 # the loop.
 #
 # Just workflow_run: no pull_request_target and no skipped-job clutter on the PR. The
@@ -30,7 +30,7 @@ permissions: {}
 
 jobs:
   auto-merge:
-    uses: bitwise-media-group/github-workflows/.github/workflows/dependabot-merge.yaml@176732b8b8ef2598ae0593db728b4415bcc86888 # v4.4.0
+    uses: bitwise-media-group/github-workflows/.github/workflows/dependabot-merge.yaml@ee856f73ecea9b0c2c989d3a6aa585774b0d2a38 # v5.0.0
     with:
       app-client-id: ${{ vars.FF_MERGE_CLIENT_ID }}
     secrets:
