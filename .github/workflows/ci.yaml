@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: MIT
 
 # Caller for the reusable CI workflow. It owns the push/pull_request triggers; the
-# core work runs in github-workflows/ci.yaml, which runs the canonical Makefile
-# gates (make lint / build / test) as one job each and sets up the toolchains the
-# repo has (package.json -> node here). `make build` regenerates dist/ and the
+# core work runs in github-workflows/ci.yaml, which runs the canonical mise tasks
+# (lint / build / test) as one job each and sets up the toolchains the repo has
+# (package.json -> node here). The `build` task regenerates dist/ and the
 # reusable workflow fails the run if the committed bundle doesn't reproduce from
 # src/.
 #
@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   ci:
-    uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@ee856f73ecea9b0c2c989d3a6aa585774b0d2a38 # v5.0.0
+    uses: bitwise-media-group/github-workflows/.github/workflows/ci.yaml@b9c031429f149794bedb5411b08d5a787b8d9959 # v6.0.1
 
   integration:
     runs-on: ubuntu-latest
