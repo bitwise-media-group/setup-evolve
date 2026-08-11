@@ -11,6 +11,10 @@ updates:
         dependency-type: production
       development:
         dependency-type: development
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
     ignore:
       # TypeScript 7 (the Go-native compiler) drops the JS API surface that
       # @rollup/plugin-typescript loads at import time; stay on 6.x until the
