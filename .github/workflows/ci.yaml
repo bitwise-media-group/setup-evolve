@@ -12,7 +12,7 @@
 # for real against evolve's published releases -- so they stay here alongside the
 # reusable `ci` job (a caller may mix a reusable-workflow job with normal jobs).
 #
-# Pinned to a full commit SHA; Dependabot keeps the pin fresh.
+# Pinned to a full commit SHA; Renovate keeps the pin fresh.
 name: Continuous Integration
 
 on:

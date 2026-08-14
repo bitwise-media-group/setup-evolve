@@ -7,7 +7,7 @@
 # consumers of the setup-evolve action pin. A committed dist/ is verified in CI, not
 # here.
 #
-# Pinned to a full commit SHA; Dependabot keeps the pin fresh.
+# Pinned to a full commit SHA; Renovate keeps the pin fresh.
 name: Release
 
 on:
