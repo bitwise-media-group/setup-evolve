@@ -24126,11 +24126,11 @@ function requireUtil$4 () {
 	return util$4;
 }
 
-var parse$3;
+var parse$4;
 var hasRequiredParse$2;
 
 function requireParse$2 () {
-	if (hasRequiredParse$2) return parse$3;
+	if (hasRequiredParse$2) return parse$4;
 	hasRequiredParse$2 = 1;
 
 	const { maxNameValuePairSize, maxAttributeValueSize } = requireConstants$6();
@@ -24437,11 +24437,11 @@ function requireParse$2 () {
 	  return parseUnparsedAttributes(unparsedAttributes, cookieAttributeList)
 	}
 
-	parse$3 = {
+	parse$4 = {
 	  parseSetCookie,
 	  parseUnparsedAttributes
 	};
-	return parse$3;
+	return parse$4;
 }
 
 var cookies;
@@ -40102,7 +40102,7 @@ function requireDist$b () {
 	return dist$g;
 }
 
-var distExports$3 = requireDist$b();
+var distExports$2 = requireDist$b();
 
 var dist$e = {};
 
@@ -40261,7 +40261,7 @@ function requireDist$a () {
 	return dist$e;
 }
 
-var distExports$2 = requireDist$a();
+var distExports$1 = requireDist$a();
 
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -40407,13 +40407,13 @@ function setProxyAgentOnRequest(request, cachedAgents, proxyUrl) {
     }
     if (isInsecure) {
         if (!cachedAgents.httpProxyAgent) {
-            cachedAgents.httpProxyAgent = new distExports$2.HttpProxyAgent(proxyUrl);
+            cachedAgents.httpProxyAgent = new distExports$1.HttpProxyAgent(proxyUrl);
         }
         request.agent = cachedAgents.httpProxyAgent;
     }
     else {
         if (!cachedAgents.httpsProxyAgent) {
-            cachedAgents.httpsProxyAgent = new distExports$3.HttpsProxyAgent(proxyUrl);
+            cachedAgents.httpsProxyAgent = new distExports$2.HttpsProxyAgent(proxyUrl);
         }
         request.agent = cachedAgents.httpsProxyAgent;
     }
@@ -43410,7 +43410,7 @@ function shouldDeserializeResponse(parsedResponse) {
     return result;
 }
 async function deserializeResponseBody(jsonContentTypes, xmlContentTypes, response, options, parseXML) {
-    const parsedResponse = await parse$2(jsonContentTypes, xmlContentTypes, response, options, parseXML);
+    const parsedResponse = await parse$3(jsonContentTypes, xmlContentTypes, response, options, parseXML);
     if (!shouldDeserializeResponse(parsedResponse)) {
         return parsedResponse;
     }
@@ -43535,7 +43535,7 @@ function handleErrorResponse(parsedResponse, operationSpec, responseSpec, option
     }
     return { error, shouldReturnResponse: false };
 }
-async function parse$2(jsonContentTypes, xmlContentTypes, operationResponse, opts, parseXML) {
+async function parse$3(jsonContentTypes, xmlContentTypes, operationResponse, opts, parseXML) {
     if (!operationResponse.request.streamResponseStatusCodes?.has(operationResponse.status) &&
         operationResponse.bodyAsText) {
         const text = operationResponse.bodyAsText;
@@ -85344,7 +85344,7 @@ function expand(template, context) {
 }
 
 // pkg/dist-src/parse.js
-function parse$1(options) {
+function parse$2(options) {
   let method = options.method.toUpperCase();
   let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
   let headers = Object.assign({}, options.headers);
@@ -85410,7 +85410,7 @@ function parse$1(options) {
 
 // pkg/dist-src/endpoint-with-defaults.js
 function endpointWithDefaults(defaults, route, options) {
-  return parse$1(merge(defaults, route, options));
+  return parse$2(merge(defaults, route, options));
 }
 
 // pkg/dist-src/with-defaults.js
@@ -85421,199 +85421,137 @@ function withDefaults$2(oldDefaults, newDefaults) {
     DEFAULTS: DEFAULTS2,
     defaults: withDefaults$2.bind(null, DEFAULTS2),
     merge: merge.bind(null, DEFAULTS2),
-    parse: parse$1
+    parse: parse$2
   });
 }
 
 // pkg/dist-src/index.js
 var endpoint = withDefaults$2(null, DEFAULTS);
 
-var dist$d = {};
-
-var hasRequiredDist$9;
-
-function requireDist$9 () {
-	if (hasRequiredDist$9) return dist$d;
-	hasRequiredDist$9 = 1;
-	/*!
-	 * content-type
-	 * Copyright(c) 2015 Douglas Christopher Wilson
-	 * MIT Licensed
-	 */
-	Object.defineProperty(dist$d, "__esModule", { value: true });
-	dist$d.format = format;
-	dist$d.parse = parse;
-	const TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
-	const TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-	/**
-	 * RegExp to match chars that must be quoted-pair in RFC 9110 sec 5.6.4
-	 */
-	const QUOTE_REGEXP = /[\\"]/g;
-	/**
-	 * RegExp to match type in RFC 9110 sec 8.3.1
-	 *
-	 * media-type = type "/" subtype
-	 * type       = token
-	 * subtype    = token
-	 */
-	const TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-	/**
-	 * Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
-	 */
-	const NullObject = /* @__PURE__ */ (() => {
-	    const C = function () { };
-	    C.prototype = Object.create(null);
-	    return C;
-	})();
-	/**
-	 * Format an object into a `Content-Type` header.
-	 */
-	function format(obj) {
-	    const { type, parameters } = obj;
-	    if (!type || !TYPE_REGEXP.test(type)) {
-	        throw new TypeError(`Invalid type: ${type}`);
-	    }
-	    let result = type;
-	    if (parameters) {
-	        for (const param of Object.keys(parameters)) {
-	            if (!TOKEN_REGEXP.test(param)) {
-	                throw new TypeError(`Invalid parameter name: ${param}`);
-	            }
-	            result += `; ${param}=${qstring(parameters[param])}`;
-	        }
-	    }
-	    return result;
-	}
-	/**
-	 * Parse a `Content-Type` header.
-	 */
-	function parse(header, options) {
-	    const stopChar = options?.comma === true ? COMMA : 65536; // Sentinel for "no stop char".
-	    const len = header.length;
-	    let index = skipOWS(header, options?.start ?? 0, len);
-	    const valueStart = index;
-	    index = skipValue(header, index, len, stopChar);
-	    const valueEnd = trailingOWS(header, valueStart, index);
-	    const type = header.slice(valueStart, valueEnd).toLowerCase();
-	    if (options?.parameters === false) {
-	        return { type, index, parameters: new NullObject() };
-	    }
-	    return parseParameters(header, type, index, len, stopChar);
-	}
-	const SP = 32; // " "
-	const HTAB = 9; // "\t"
-	const SEMI = 59; // ";"
-	const EQ = 61; // "="
-	const DQUOTE = 34; // '"'
-	const BSLASH = 92; // "\\"
-	const COMMA = 44; // ","
-	/**
-	 * Parses the parameters of a `Content-Type` header starting at the given index.
-	 */
-	function parseParameters(header, type, index, len, stopChar) {
-	    const parameters = new NullObject();
-	    parameter: while (index < len) {
-	        if (header.charCodeAt(index) === stopChar)
-	            break;
-	        index = skipOWS(header, index + 1 /* Skip over ; */, len);
-	        const keyStart = index;
-	        while (index < len) {
-	            const code = header.charCodeAt(index);
-	            if (code === stopChar)
-	                break parameter;
-	            if (code === SEMI)
-	                continue parameter;
-	            if (code === EQ) {
-	                const keyEnd = trailingOWS(header, keyStart, index);
-	                const key = header.slice(keyStart, keyEnd).toLowerCase();
-	                index = skipOWS(header, index + 1, len);
-	                if (index < len && header.charCodeAt(index) === DQUOTE) {
-	                    index++;
-	                    let value = "";
-	                    while (index < len) {
-	                        const code = header.charCodeAt(index++);
-	                        if (code === DQUOTE) {
-	                            index = skipValue(header, index, len, stopChar);
-	                            if (parameters[key] === undefined)
-	                                parameters[key] = value;
-	                            break;
-	                        }
-	                        if (code === BSLASH && index < len) {
-	                            value += header[index++];
-	                            continue;
-	                        }
-	                        value += String.fromCharCode(code);
-	                    }
-	                    continue parameter;
-	                }
-	                const valueStart = index;
-	                index = skipValue(header, index, len, stopChar);
-	                if (parameters[key] === undefined) {
-	                    const valueEnd = trailingOWS(header, valueStart, index);
-	                    parameters[key] = header.slice(valueStart, valueEnd);
-	                }
-	                continue parameter;
-	            }
-	            index++;
-	        }
-	    }
-	    return { type, index, parameters };
-	}
-	/**
-	 * Skip over characters until a semicolon or other exit character.
-	 */
-	function skipValue(str, index, len, stopChar) {
-	    while (index < len) {
-	        const code = str.charCodeAt(index);
-	        if (code === SEMI || code === stopChar)
-	            break;
-	        index++;
-	    }
-	    return index;
-	}
-	/**
-	 * Skip optional whitespace (OWS) in an HTTP header value.
-	 *
-	 * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
-	 */
-	function skipOWS(header, index, len) {
-	    while (index < len) {
-	        const char = header.charCodeAt(index);
-	        if (char !== SP && char !== HTAB)
-	            break;
-	        index++;
-	    }
-	    return index;
-	}
-	/**
-	 * Trim optional whitespace (OWS) from the end of a substring.
-	 *
-	 * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
-	 */
-	function trailingOWS(header, start, end) {
-	    while (end > start) {
-	        const char = header.charCodeAt(end - 1);
-	        if (char !== SP && char !== HTAB)
-	            break;
-	        end--;
-	    }
-	    return end;
-	}
-	/**
-	 * Serialize a parameter value.
-	 */
-	function qstring(str) {
-	    if (TOKEN_REGEXP.test(str))
-	        return str;
-	    if (TEXT_REGEXP.test(str))
-	        return `"${str.replace(QUOTE_REGEXP, "\\$&")}"`;
-	    throw new TypeError(`Invalid parameter value: ${str}`);
-	}
-	
-	return dist$d;
+/*!
+ * content-type
+ * Copyright(c) 2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+/**
+ * Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
+ */
+const NullObject = /* @__PURE__ */ (() => {
+    const C = function () { };
+    C.prototype = Object.create(null);
+    return C;
+})();
+/**
+ * Parse a `Content-Type` header.
+ */
+function parse$1(header, options) {
+    const stopChar = 65_536; // Sentinel for "no stop char".
+    const len = header.length;
+    let index = skipOWS(header, 0, len);
+    const valueStart = index;
+    index = skipValue(header, index, len, stopChar);
+    const valueEnd = trailingOWS(header, valueStart, index);
+    const type = header.slice(valueStart, valueEnd).toLowerCase();
+    return parseParameters(header, type, index, len, stopChar);
 }
-
-var distExports$1 = requireDist$9();
+const SP = 32; // " "
+const HTAB = 9; // "\t"
+const SEMI = 59; // ";"
+const EQ = 61; // "="
+const DQUOTE = 34; // '"'
+const BSLASH = 92; // "\\"
+/**
+ * Parses the parameters of a `Content-Type` header starting at the given index.
+ */
+function parseParameters(header, type, index, len, stopChar) {
+    const parameters = new NullObject();
+    parameter: while (index < len) {
+        if (header.charCodeAt(index) === stopChar)
+            break;
+        index = skipOWS(header, index + 1 /* Skip over ; */, len);
+        const keyStart = index;
+        while (index < len) {
+            const code = header.charCodeAt(index);
+            if (code === stopChar)
+                break parameter;
+            if (code === SEMI)
+                continue parameter;
+            if (code === EQ) {
+                const keyEnd = trailingOWS(header, keyStart, index);
+                const key = header.slice(keyStart, keyEnd).toLowerCase();
+                index = skipOWS(header, index + 1, len);
+                if (index < len && header.charCodeAt(index) === DQUOTE) {
+                    index++;
+                    let value = "";
+                    while (index < len) {
+                        const code = header.charCodeAt(index++);
+                        if (code === DQUOTE) {
+                            index = skipValue(header, index, len, stopChar);
+                            if (parameters[key] === undefined)
+                                parameters[key] = value;
+                            break;
+                        }
+                        if (code === BSLASH && index < len) {
+                            value += header[index++];
+                            continue;
+                        }
+                        value += String.fromCharCode(code);
+                    }
+                    continue parameter;
+                }
+                const valueStart = index;
+                index = skipValue(header, index, len, stopChar);
+                if (parameters[key] === undefined) {
+                    const valueEnd = trailingOWS(header, valueStart, index);
+                    parameters[key] = header.slice(valueStart, valueEnd);
+                }
+                continue parameter;
+            }
+            index++;
+        }
+    }
+    return { type, index, parameters };
+}
+/**
+ * Skip over characters until a semicolon or other exit character.
+ */
+function skipValue(str, index, len, stopChar) {
+    while (index < len) {
+        const code = str.charCodeAt(index);
+        if (code === SEMI || code === stopChar)
+            break;
+        index++;
+    }
+    return index;
+}
+/**
+ * Skip optional whitespace (OWS) in an HTTP header value.
+ *
+ * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
+ */
+function skipOWS(header, index, len) {
+    while (index < len) {
+        const char = header.charCodeAt(index);
+        if (char !== SP && char !== HTAB)
+            break;
+        index++;
+    }
+    return index;
+}
+/**
+ * Trim optional whitespace (OWS) from the end of a substring.
+ *
+ * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
+ */
+function trailingOWS(header, start, end) {
+    while (end > start) {
+        const char = header.charCodeAt(end - 1);
+        if (char !== SP && char !== HTAB)
+            break;
+        end--;
+    }
+    return end;
+}
 
 const intRegex = /^-?\d+$/;
 const noiseValue = /^-?\d+n+$/; // Noise - strings that match the custom format before being converted to it
@@ -86222,7 +86160,7 @@ class RequestError extends Error {
 // pkg/dist-src/index.js
 
 // pkg/dist-src/version.js
-var VERSION$4 = "10.0.14";
+var VERSION$4 = "10.0.15";
 
 // pkg/dist-src/defaults.js
 var defaults_default = {
@@ -86344,7 +86282,7 @@ async function getResponseData(response) {
   if (!contentType) {
     return response.text().catch(noop$1);
   }
-  const mimetype = distExports$1.parse(contentType);
+  const mimetype = parse$1(contentType);
   if (isJSONResponse(mimetype)) {
     let text = "";
     try {
@@ -89984,13 +89922,13 @@ function assertApiDigest(apiDigest, actualHex, assetName) {
     }
 }
 
-var dist$c = {};
+var dist$d = {};
 
-var dist$b = {};
+var dist$c = {};
 
 var build$1 = {};
 
-var dist$a = {};
+var dist$b = {};
 
 var envelope = {};
 
@@ -90002,8 +89940,8 @@ function requireEnvelope () {
 	(function (exports) {
 		// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 		// versions:
-		//   protoc-gen-ts_proto  v2.11.5
-		//   protoc               v7.34.1
+		//   protoc-gen-ts_proto  v2.12.0
+		//   protoc               v7.35.1
 		// source: envelope.proto
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.Signature = exports.Envelope = void 0;
@@ -90075,8 +90013,8 @@ function requireTimestamp$3 () {
 	hasRequiredTimestamp$3 = 1;
 	// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 	// versions:
-	//   protoc-gen-ts_proto  v2.11.5
-	//   protoc               v7.34.1
+	//   protoc-gen-ts_proto  v2.12.0
+	//   protoc               v7.35.1
 	// source: google/protobuf/timestamp.proto
 	Object.defineProperty(timestamp$3, "__esModule", { value: true });
 	timestamp$3.Timestamp = void 0;
@@ -90112,8 +90050,8 @@ function requireSigstore_common () {
 	(function (exports) {
 		// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 		// versions:
-		//   protoc-gen-ts_proto  v2.11.5
-		//   protoc               v7.34.1
+		//   protoc-gen-ts_proto  v2.12.0
+		//   protoc               v7.35.1
 		// source: sigstore_common.proto
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.TimeRange = exports.X509CertificateChain = exports.SubjectAlternativeName = exports.X509Certificate = exports.DistinguishedName = exports.ObjectIdentifierValuePair = exports.ObjectIdentifier = exports.PublicKeyIdentifier = exports.PublicKey = exports.RFC3161SignedTimestamp = exports.LogId = exports.MessageSignature = exports.HashOutput = exports.SubjectAlternativeNameType = exports.PublicKeyDetails = exports.HashAlgorithm = void 0;
@@ -90735,8 +90673,8 @@ function requireSigstore_rekor () {
 	(function (exports) {
 		// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 		// versions:
-		//   protoc-gen-ts_proto  v2.11.5
-		//   protoc               v7.34.1
+		//   protoc-gen-ts_proto  v2.12.0
+		//   protoc               v7.35.1
 		// source: sigstore_rekor.proto
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.TransparencyLogEntry = exports.InclusionPromise = exports.InclusionProof = exports.Checkpoint = exports.KindVersion = void 0;
@@ -90881,8 +90819,8 @@ function requireSigstore_bundle () {
 	(function (exports) {
 		// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 		// versions:
-		//   protoc-gen-ts_proto  v2.11.5
-		//   protoc               v7.34.1
+		//   protoc-gen-ts_proto  v2.12.0
+		//   protoc               v7.35.1
 		// source: sigstore_bundle.proto
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.Bundle = exports.VerificationMaterial = exports.TimestampVerificationData = void 0;
@@ -90995,8 +90933,8 @@ function requireSigstore_trustroot () {
 	(function (exports) {
 		// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 		// versions:
-		//   protoc-gen-ts_proto  v2.11.5
-		//   protoc               v7.34.1
+		//   protoc-gen-ts_proto  v2.12.0
+		//   protoc               v7.35.1
 		// source: sigstore_trustroot.proto
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.ClientTrustConfig = exports.ServiceConfiguration = exports.Service = exports.SigningConfig = exports.TrustedRoot = exports.CertificateAuthority = exports.TransparencyLogInstance = exports.ServiceSelector = void 0;
@@ -91290,8 +91228,8 @@ function requireSigstore_verification () {
 	(function (exports) {
 		// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 		// versions:
-		//   protoc-gen-ts_proto  v2.11.5
-		//   protoc               v7.34.1
+		//   protoc-gen-ts_proto  v2.12.0
+		//   protoc               v7.35.1
 		// source: sigstore_verification.proto
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.Input = exports.Artifact = exports.ArtifactVerificationOptions_ObserverTimestampOptions = exports.ArtifactVerificationOptions_TlogIntegratedTimestampOptions = exports.ArtifactVerificationOptions_TimestampAuthorityOptions = exports.ArtifactVerificationOptions_CtlogOptions = exports.ArtifactVerificationOptions_TlogOptions = exports.ArtifactVerificationOptions = exports.PublicKeyIdentities = exports.CertificateIdentities = exports.CertificateIdentity = void 0;
@@ -91572,13 +91510,13 @@ function requireSigstore_verification () {
 	return sigstore_verification;
 }
 
-var hasRequiredDist$8;
+var hasRequiredDist$9;
 
-function requireDist$8 () {
-	if (hasRequiredDist$8) return dist$a;
-	hasRequiredDist$8 = 1;
+function requireDist$9 () {
+	if (hasRequiredDist$9) return dist$b;
+	hasRequiredDist$9 = 1;
 	(function (exports) {
-		var __createBinding = (dist$a && dist$a.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+		var __createBinding = (dist$b && dist$b.__createBinding) || (Object.create ? (function(o, m, k, k2) {
 		    if (k2 === undefined) k2 = k;
 		    var desc = Object.getOwnPropertyDescriptor(m, k);
 		    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -91589,7 +91527,7 @@ function requireDist$8 () {
 		    if (k2 === undefined) k2 = k;
 		    o[k2] = m[k];
 		}));
-		var __exportStar = (dist$a && dist$a.__exportStar) || function(m, exports) {
+		var __exportStar = (dist$b && dist$b.__exportStar) || function(m, exports) {
 		    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 		};
 		Object.defineProperty(exports, "__esModule", { value: true });
@@ -91614,8 +91552,8 @@ function requireDist$8 () {
 		__exportStar(requireSigstore_rekor(), exports);
 		__exportStar(requireSigstore_trustroot(), exports);
 		__exportStar(requireSigstore_verification(), exports); 
-	} (dist$a));
-	return dist$a;
+	} (dist$b));
+	return dist$b;
 }
 
 var bundle$2 = {};
@@ -91674,7 +91612,7 @@ function requireBuild$1 () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const protobuf_specs_1 = requireDist$8();
+	const protobuf_specs_1 = requireDist$9();
 	const bundle_1 = requireBundle$2();
 	// Message signature bundle - $case: 'messageSignature'
 	function toMessageSignatureBundle(options) {
@@ -92025,7 +91963,7 @@ function requireSerialized () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const protobuf_specs_1 = requireDist$8();
+	const protobuf_specs_1 = requireDist$9();
 	const bundle_1 = requireBundle$2();
 	const validate_1 = requireValidate();
 	const bundleFromJSON = (obj) => {
@@ -92059,11 +91997,11 @@ function requireSerialized () {
 	return serialized;
 }
 
-var hasRequiredDist$7;
+var hasRequiredDist$8;
 
-function requireDist$7 () {
-	if (hasRequiredDist$7) return dist$b;
-	hasRequiredDist$7 = 1;
+function requireDist$8 () {
+	if (hasRequiredDist$8) return dist$c;
+	hasRequiredDist$8 = 1;
 	(function (exports) {
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.isBundleV01 = exports.assertBundleV02 = exports.assertBundleV01 = exports.assertBundleLatest = exports.assertBundle = exports.envelopeToJSON = exports.envelopeFromJSON = exports.bundleToJSON = exports.bundleFromJSON = exports.ValidationError = exports.isBundleWithPublicKey = exports.isBundleWithMessageSignature = exports.isBundleWithDsseEnvelope = exports.isBundleWithCertificateChain = exports.BUNDLE_V03_MEDIA_TYPE = exports.BUNDLE_V03_LEGACY_MEDIA_TYPE = exports.BUNDLE_V02_MEDIA_TYPE = exports.BUNDLE_V01_MEDIA_TYPE = exports.toMessageSignatureBundle = exports.toDSSEBundle = void 0;
@@ -92107,11 +92045,11 @@ function requireDist$7 () {
 		Object.defineProperty(exports, "assertBundleV01", { enumerable: true, get: function () { return validate_1.assertBundleV01; } });
 		Object.defineProperty(exports, "assertBundleV02", { enumerable: true, get: function () { return validate_1.assertBundleV02; } });
 		Object.defineProperty(exports, "isBundleV01", { enumerable: true, get: function () { return validate_1.isBundleV01; } }); 
-	} (dist$b));
-	return dist$b;
+	} (dist$c));
+	return dist$c;
 }
 
-var dist$9 = {};
+var dist$a = {};
 
 var bundler = {};
 
@@ -92119,7 +92057,7 @@ var dsse$4 = {};
 
 var util$1 = {};
 
-var dist$8 = {};
+var dist$9 = {};
 
 var asn1 = {};
 
@@ -94096,13 +94034,13 @@ function requireX509 () {
 	return x509;
 }
 
-var hasRequiredDist$6;
+var hasRequiredDist$7;
 
-function requireDist$6 () {
-	if (hasRequiredDist$6) return dist$8;
-	hasRequiredDist$6 = 1;
+function requireDist$7 () {
+	if (hasRequiredDist$7) return dist$9;
+	hasRequiredDist$7 = 1;
 	(function (exports) {
-		var __createBinding = (dist$8 && dist$8.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+		var __createBinding = (dist$9 && dist$9.__createBinding) || (Object.create ? (function(o, m, k, k2) {
 		    if (k2 === undefined) k2 = k;
 		    var desc = Object.getOwnPropertyDescriptor(m, k);
 		    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -94113,12 +94051,12 @@ function requireDist$6 () {
 		    if (k2 === undefined) k2 = k;
 		    o[k2] = m[k];
 		}));
-		var __setModuleDefault = (dist$8 && dist$8.__setModuleDefault) || (Object.create ? (function(o, v) {
+		var __setModuleDefault = (dist$9 && dist$9.__setModuleDefault) || (Object.create ? (function(o, v) {
 		    Object.defineProperty(o, "default", { enumerable: true, value: v });
 		}) : function(o, v) {
 		    o["default"] = v;
 		});
-		var __importStar = (dist$8 && dist$8.__importStar) || (function () {
+		var __importStar = (dist$9 && dist$9.__importStar) || (function () {
 		    var ownKeys = function(o) {
 		        ownKeys = Object.getOwnPropertyNames || function (o) {
 		            var ar = [];
@@ -94167,8 +94105,8 @@ function requireDist$6 () {
 		Object.defineProperty(exports, "EXTENSION_OID_SCT", { enumerable: true, get: function () { return x509_1.EXTENSION_OID_SCT; } });
 		Object.defineProperty(exports, "X509Certificate", { enumerable: true, get: function () { return x509_1.X509Certificate; } });
 		Object.defineProperty(exports, "X509SCTExtension", { enumerable: true, get: function () { return x509_1.X509SCTExtension; } }); 
-	} (dist$8));
-	return dist$8;
+	} (dist$9));
+	return dist$9;
 }
 
 var oidc = {};
@@ -94195,7 +94133,7 @@ function requireOidc () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	function extractJWTSubject(jwt) {
 	    const parts = jwt.split('.', 3);
 	    const payload = JSON.parse(core_1.encoding.base64Decode(parts[1]));
@@ -94316,7 +94254,7 @@ function requireUtil$1 () {
 		See the License for the specific language governing permissions and
 		limitations under the License.
 		*/
-		var core_1 = requireDist$6();
+		var core_1 = requireDist$7();
 		Object.defineProperty(exports, "crypto", { enumerable: true, get: function () { return core_1.crypto; } });
 		Object.defineProperty(exports, "dsse", { enumerable: true, get: function () { return core_1.dsse; } });
 		Object.defineProperty(exports, "encoding", { enumerable: true, get: function () { return core_1.encoding; } });
@@ -94447,7 +94385,7 @@ function requireBundle$1 () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const sigstore = __importStar(requireDist$7());
+	const sigstore = __importStar(requireDist$8());
 	const util_1 = requireUtil$1();
 	// Helper functions for assembling the parts of a Sigstore bundle
 	// Message signature bundle - $case: 'messageSignature'
@@ -110432,6 +110370,191 @@ var negotiator = {exports: {}};
 
 var charset = {exports: {}};
 
+var dist$8 = {};
+
+var hasRequiredDist$6;
+
+function requireDist$6 () {
+	if (hasRequiredDist$6) return dist$8;
+	hasRequiredDist$6 = 1;
+	/*!
+	 * content-type
+	 * Copyright(c) 2015 Douglas Christopher Wilson
+	 * MIT Licensed
+	 */
+	Object.defineProperty(dist$8, "__esModule", { value: true });
+	dist$8.format = format;
+	dist$8.parse = parse;
+	const TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
+	const TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+	/**
+	 * RegExp to match chars that must be quoted-pair in RFC 9110 sec 5.6.4
+	 */
+	const QUOTE_REGEXP = /[\\"]/g;
+	/**
+	 * RegExp to match type in RFC 9110 sec 8.3.1
+	 *
+	 * media-type = type "/" subtype
+	 * type       = token
+	 * subtype    = token
+	 */
+	const TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+	/**
+	 * Null object perf optimization. Faster than `Object.create(null)` and `{ __proto__: null }`.
+	 */
+	const NullObject = /* @__PURE__ */ (() => {
+	    const C = function () { };
+	    C.prototype = Object.create(null);
+	    return C;
+	})();
+	/**
+	 * Format an object into a `Content-Type` header.
+	 */
+	function format(obj) {
+	    const { type, parameters } = obj;
+	    if (!type || !TYPE_REGEXP.test(type)) {
+	        throw new TypeError(`Invalid type: ${type}`);
+	    }
+	    let result = type;
+	    if (parameters) {
+	        for (const param of Object.keys(parameters)) {
+	            if (!TOKEN_REGEXP.test(param)) {
+	                throw new TypeError(`Invalid parameter name: ${param}`);
+	            }
+	            result += `; ${param}=${qstring(parameters[param])}`;
+	        }
+	    }
+	    return result;
+	}
+	/**
+	 * Parse a `Content-Type` header.
+	 */
+	function parse(header, options) {
+	    const stopChar = options?.comma === true ? COMMA : 65536; // Sentinel for "no stop char".
+	    const len = header.length;
+	    let index = skipOWS(header, options?.start ?? 0, len);
+	    const valueStart = index;
+	    index = skipValue(header, index, len, stopChar);
+	    const valueEnd = trailingOWS(header, valueStart, index);
+	    const type = header.slice(valueStart, valueEnd).toLowerCase();
+	    if (options?.parameters === false) {
+	        return { type, index, parameters: new NullObject() };
+	    }
+	    return parseParameters(header, type, index, len, stopChar);
+	}
+	const SP = 32; // " "
+	const HTAB = 9; // "\t"
+	const SEMI = 59; // ";"
+	const EQ = 61; // "="
+	const DQUOTE = 34; // '"'
+	const BSLASH = 92; // "\\"
+	const COMMA = 44; // ","
+	/**
+	 * Parses the parameters of a `Content-Type` header starting at the given index.
+	 */
+	function parseParameters(header, type, index, len, stopChar) {
+	    const parameters = new NullObject();
+	    parameter: while (index < len) {
+	        if (header.charCodeAt(index) === stopChar)
+	            break;
+	        index = skipOWS(header, index + 1 /* Skip over ; */, len);
+	        const keyStart = index;
+	        while (index < len) {
+	            const code = header.charCodeAt(index);
+	            if (code === stopChar)
+	                break parameter;
+	            if (code === SEMI)
+	                continue parameter;
+	            if (code === EQ) {
+	                const keyEnd = trailingOWS(header, keyStart, index);
+	                const key = header.slice(keyStart, keyEnd).toLowerCase();
+	                index = skipOWS(header, index + 1, len);
+	                if (index < len && header.charCodeAt(index) === DQUOTE) {
+	                    index++;
+	                    let value = "";
+	                    while (index < len) {
+	                        const code = header.charCodeAt(index++);
+	                        if (code === DQUOTE) {
+	                            index = skipValue(header, index, len, stopChar);
+	                            if (parameters[key] === undefined)
+	                                parameters[key] = value;
+	                            break;
+	                        }
+	                        if (code === BSLASH && index < len) {
+	                            value += header[index++];
+	                            continue;
+	                        }
+	                        value += String.fromCharCode(code);
+	                    }
+	                    continue parameter;
+	                }
+	                const valueStart = index;
+	                index = skipValue(header, index, len, stopChar);
+	                if (parameters[key] === undefined) {
+	                    const valueEnd = trailingOWS(header, valueStart, index);
+	                    parameters[key] = header.slice(valueStart, valueEnd);
+	                }
+	                continue parameter;
+	            }
+	            index++;
+	        }
+	    }
+	    return { type, index, parameters };
+	}
+	/**
+	 * Skip over characters until a semicolon or other exit character.
+	 */
+	function skipValue(str, index, len, stopChar) {
+	    while (index < len) {
+	        const code = str.charCodeAt(index);
+	        if (code === SEMI || code === stopChar)
+	            break;
+	        index++;
+	    }
+	    return index;
+	}
+	/**
+	 * Skip optional whitespace (OWS) in an HTTP header value.
+	 *
+	 * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
+	 */
+	function skipOWS(header, index, len) {
+	    while (index < len) {
+	        const char = header.charCodeAt(index);
+	        if (char !== SP && char !== HTAB)
+	            break;
+	        index++;
+	    }
+	    return index;
+	}
+	/**
+	 * Trim optional whitespace (OWS) from the end of a substring.
+	 *
+	 * OWS is defined in RFC 9110 sec 5.6.3 as SP (" ") or HTAB ("\t").
+	 */
+	function trailingOWS(header, start, end) {
+	    while (end > start) {
+	        const char = header.charCodeAt(end - 1);
+	        if (char !== SP && char !== HTAB)
+	            break;
+	        end--;
+	    }
+	    return end;
+	}
+	/**
+	 * Serialize a parameter value.
+	 */
+	function qstring(str) {
+	    if (TOKEN_REGEXP.test(str))
+	        return str;
+	    if (TEXT_REGEXP.test(str))
+	        return `"${str.replace(QUOTE_REGEXP, "\\$&")}"`;
+	    throw new TypeError(`Invalid parameter value: ${str}`);
+	}
+	
+	return dist$8;
+}
+
 /*!
  * negotiator
  * Copyright(c) 2026 Blake Embrey
@@ -110445,7 +110568,7 @@ function requireAccept () {
 	if (hasRequiredAccept) return accept;
 	hasRequiredAccept = 1;
 
-	var contentType = requireDist$9();
+	var contentType = requireDist$6();
 
 	/**
 	 * Module exports.
@@ -110854,7 +110977,7 @@ function requireLanguage () {
 	if (hasRequiredLanguage) return language.exports;
 	hasRequiredLanguage = 1;
 
-	var contentType = requireDist$9();
+	var contentType = requireDist$6();
 	var parseAccept = requireAccept();
 
 	/**
@@ -111020,7 +111143,7 @@ function requireMediaType () {
 	if (hasRequiredMediaType) return mediaType.exports;
 	hasRequiredMediaType = 1;
 
-	var contentType = requireDist$9();
+	var contentType = requireDist$6();
 	var parseAcceptHeader = requireAccept();
 
 	/**
@@ -125098,8 +125221,8 @@ function requireVerifier$1 () {
 	(function (exports) {
 		// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 		// versions:
-		//   protoc-gen-ts_proto  v2.11.5
-		//   protoc               v7.34.1
+		//   protoc-gen-ts_proto  v2.12.0
+		//   protoc               v7.35.1
 		// source: rekor/v2/verifier.proto
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.Signature = exports.Verifier = exports.PublicKey = void 0;
@@ -125180,8 +125303,8 @@ function requireDsse$2 () {
 	hasRequiredDsse$2 = 1;
 	// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 	// versions:
-	//   protoc-gen-ts_proto  v2.11.5
-	//   protoc               v7.34.1
+	//   protoc-gen-ts_proto  v2.12.0
+	//   protoc               v7.35.1
 	// source: rekor/v2/dsse.proto
 	Object.defineProperty(dsse$2, "__esModule", { value: true });
 	dsse$2.DSSELogEntryV002 = dsse$2.DSSERequestV002 = void 0;
@@ -125246,8 +125369,8 @@ function requireHashedrekord$1 () {
 	hasRequiredHashedrekord$1 = 1;
 	// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 	// versions:
-	//   protoc-gen-ts_proto  v2.11.5
-	//   protoc               v7.34.1
+	//   protoc-gen-ts_proto  v2.12.0
+	//   protoc               v7.35.1
 	// source: rekor/v2/hashedrekord.proto
 	Object.defineProperty(hashedrekord$1, "__esModule", { value: true });
 	hashedrekord$1.HashedRekordLogEntryV002 = hashedrekord$1.HashedRekordRequestV002 = void 0;
@@ -125310,8 +125433,8 @@ function requireEntry$1 () {
 	(function (exports) {
 		// Code generated by protoc-gen-ts_proto. DO NOT EDIT.
 		// versions:
-		//   protoc-gen-ts_proto  v2.11.5
-		//   protoc               v7.34.1
+		//   protoc-gen-ts_proto  v2.12.0
+		//   protoc               v7.35.1
 		// source: rekor/v2/entry.proto
 		Object.defineProperty(exports, "__esModule", { value: true });
 		exports.CreateEntryRequest = exports.Spec = exports.Entry = void 0;
@@ -125459,7 +125582,7 @@ function requireRekorV2 () {
 	limitations under the License.
 	*/
 	const fetch_1 = requireFetch();
-	const protobuf_specs_1 = requireDist$8();
+	const protobuf_specs_1 = requireDist$9();
 	const v2_1 = requireV2();
 	/**
 	 * Rekor API client.
@@ -125612,8 +125735,8 @@ function requireEntry () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const bundle_1 = requireDist$7();
-	const protobuf_specs_1 = requireDist$8();
+	const bundle_1 = requireDist$8();
+	const protobuf_specs_1 = requireDist$9();
 	const util_1 = requireUtil$1();
 	const SHA256_ALGORITHM = 'sha256';
 	function toProposedEntry(content, publicKey, 
@@ -126117,7 +126240,7 @@ function requireConfig$2 () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const protobuf_specs_1 = requireDist$8();
+	const protobuf_specs_1 = requireDist$9();
 	const dsse_1 = requireDsse$3();
 	const message_1 = requireMessage$1();
 	const signer_1 = requireSigner();
@@ -126362,7 +126485,7 @@ function requireIdentity () {
 var hasRequiredDist$5;
 
 function requireDist$5 () {
-	if (hasRequiredDist$5) return dist$9;
+	if (hasRequiredDist$5) return dist$a;
 	hasRequiredDist$5 = 1;
 	(function (exports) {
 		Object.defineProperty(exports, "__esModule", { value: true });
@@ -126383,8 +126506,8 @@ function requireDist$5 () {
 		Object.defineProperty(exports, "DEFAULT_REKOR_URL", { enumerable: true, get: function () { return witness_1.DEFAULT_REKOR_URL; } });
 		Object.defineProperty(exports, "RekorWitness", { enumerable: true, get: function () { return witness_1.RekorWitness; } });
 		Object.defineProperty(exports, "TSAWitness", { enumerable: true, get: function () { return witness_1.TSAWitness; } }); 
-	} (dist$9));
-	return dist$9;
+	} (dist$a));
+	return dist$a;
 }
 
 var dist$3 = {};
@@ -132154,7 +132277,7 @@ function requireDist$2 () {
 		See the License for the specific language governing permissions and
 		limitations under the License.
 		*/
-		const protobuf_specs_1 = requireDist$8();
+		const protobuf_specs_1 = requireDist$9();
 		const appdata_1 = requireAppdata();
 		const client_1 = requireClient();
 		exports.DEFAULT_MIRROR_URL = 'https://tuf-repo-cdn.sigstore.dev';
@@ -132222,7 +132345,7 @@ function requireDsse$1 () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	class DSSESignatureContent {
 	    env;
 	    constructor(env) {
@@ -132281,8 +132404,8 @@ function requireMessage () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const core_1 = requireDist$6();
-	const protobuf_specs_1 = requireDist$8();
+	const core_1 = requireDist$7();
+	const protobuf_specs_1 = requireDist$9();
 	// Map from the Sigstore protobuf HashAlgorithm enum to
 	// the string values used by the Node.js crypto module.
 	const HASH_ALGORITHM_MAP = {
@@ -132333,7 +132456,7 @@ function requireBundle () {
 	Object.defineProperty(bundle, "__esModule", { value: true });
 	bundle.toSignedEntity = toSignedEntity;
 	bundle.signatureContent = signatureContent;
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	const dsse_1 = requireDsse$1();
 	const message_1 = requireMessage();
 	function toSignedEntity(bundle, artifact) {
@@ -132492,8 +132615,8 @@ function requireTrust () {
 		See the License for the specific language governing permissions and
 		limitations under the License.
 		*/
-		const core_1 = requireDist$6();
-		const protobuf_specs_1 = requireDist$8();
+		const core_1 = requireDist$7();
+		const protobuf_specs_1 = requireDist$9();
 		const error_1 = requireError();
 		const BEGINNING_OF_TIME = new Date(0);
 		const END_OF_TIME = new Date(8640000000000000);
@@ -132820,7 +132943,7 @@ function requireSct () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	const error_1 = requireError();
 	const trust_1 = requireTrust();
 	function verifySCTs(cert, issuer, ctlogs) {
@@ -132906,7 +133029,7 @@ function requireKey () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	const error_1 = requireError();
 	const certificate_1 = requireCertificate();
 	const sct_1 = requireSct();
@@ -133033,7 +133156,7 @@ function requireTsa () {
 	hasRequiredTsa = 1;
 	Object.defineProperty(tsa, "__esModule", { value: true });
 	tsa.verifyRFC3161Timestamp = verifyRFC3161Timestamp;
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	const error_1 = requireError();
 	const certificate_1 = requireCertificate();
 	const trust_1 = requireTrust();
@@ -133447,7 +133570,7 @@ function requireCheckpoint () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	const error_1 = requireError();
 	// Separator between the note and the signatures in a checkpoint
 	const CHECKPOINT_SEPARATOR = '\n\n';
@@ -133623,7 +133746,7 @@ function requireMerkle () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	const error_1 = requireError();
 	const RFC6962_LEAF_HASH_PREFIX = Buffer.from([0x00]);
 	const RFC6962_NODE_HASH_PREFIX = Buffer.from([0x01]);
@@ -133747,7 +133870,7 @@ function requireSet () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const core_1 = requireDist$6();
+	const core_1 = requireDist$7();
 	const error_1 = requireError();
 	const trust_1 = requireTrust();
 	// Verifies the SET for the given entry against the list of trusted
@@ -134145,7 +134268,7 @@ function requireConfig () {
 		See the License for the specific language governing permissions and
 		limitations under the License.
 		*/
-		const core_1 = requireDist$6();
+		const core_1 = requireDist$7();
 		const sign_1 = requireDist$5();
 		const verify_1 = requireDist$1();
 		exports.DEFAULT_RETRY = { retries: 2 };
@@ -134312,7 +134435,7 @@ function requireSigstore () {
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	*/
-	const bundle_1 = requireDist$7();
+	const bundle_1 = requireDist$8();
 	const tuf = __importStar(requireDist$2());
 	const verify_1 = requireDist$1();
 	const config = __importStar(requireConfig());
@@ -134376,7 +134499,7 @@ function requireSigstore () {
 var hasRequiredDist;
 
 function requireDist () {
-	if (hasRequiredDist) return dist$c;
+	if (hasRequiredDist) return dist$d;
 	hasRequiredDist = 1;
 	(function (exports) {
 		Object.defineProperty(exports, "__esModule", { value: true });
@@ -134396,7 +134519,7 @@ function requireDist () {
 		See the License for the specific language governing permissions and
 		limitations under the License.
 		*/
-		var bundle_1 = requireDist$7();
+		var bundle_1 = requireDist$8();
 		Object.defineProperty(exports, "ValidationError", { enumerable: true, get: function () { return bundle_1.ValidationError; } });
 		var sign_1 = requireDist$5();
 		Object.defineProperty(exports, "DEFAULT_FULCIO_URL", { enumerable: true, get: function () { return sign_1.DEFAULT_FULCIO_URL; } });
@@ -134412,8 +134535,8 @@ function requireDist () {
 		Object.defineProperty(exports, "createVerifier", { enumerable: true, get: function () { return sigstore_1.createVerifier; } });
 		Object.defineProperty(exports, "sign", { enumerable: true, get: function () { return sigstore_1.sign; } });
 		Object.defineProperty(exports, "verify", { enumerable: true, get: function () { return sigstore_1.verify; } }); 
-	} (dist$c));
-	return dist$c;
+	} (dist$d));
+	return dist$d;
 }
 
 var distExports = requireDist();
