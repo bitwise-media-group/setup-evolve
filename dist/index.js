@@ -65412,7 +65412,7 @@ const blobServiceProperties = {
     parameterPath: "blobServiceProperties",
     mapper: BlobServiceProperties,
 };
-const accept = {
+const accept$1 = {
     parameterPath: "accept",
     mapper: {
         defaultValue: "application/xml",
@@ -67245,7 +67245,7 @@ const setPropertiesOperationSpec = {
     urlParameters: [url$1],
     headerParameters: [
         contentType,
-        accept,
+        accept$1,
         version$6,
         requestId,
     ],
@@ -67360,7 +67360,7 @@ const getUserDelegationKeyOperationSpec = {
     urlParameters: [url$1],
     headerParameters: [
         contentType,
-        accept,
+        accept$1,
         version$6,
         requestId,
     ],
@@ -67415,7 +67415,7 @@ const submitBatchOperationSpec$1 = {
     queryParameters: [timeoutInSeconds, comp4],
     urlParameters: [url$1],
     headerParameters: [
-        accept,
+        accept$1,
         version$6,
         requestId,
         contentLength,
@@ -67791,7 +67791,7 @@ const setAccessPolicyOperationSpec = {
     urlParameters: [url$1],
     headerParameters: [
         contentType,
-        accept,
+        accept$1,
         version$6,
         requestId,
         access,
@@ -67884,7 +67884,7 @@ const submitBatchOperationSpec = {
     ],
     urlParameters: [url$1],
     headerParameters: [
-        accept,
+        accept$1,
         version$6,
         requestId,
         contentLength,
@@ -69108,7 +69108,7 @@ const queryOperationSpec = {
     urlParameters: [url$1],
     headerParameters: [
         contentType,
-        accept,
+        accept$1,
         version$6,
         requestId,
         leaseId,
@@ -69181,7 +69181,7 @@ const setTagsOperationSpec = {
     urlParameters: [url$1],
     headerParameters: [
         contentType,
-        accept,
+        accept$1,
         version$6,
         requestId,
         leaseId,
@@ -70195,7 +70195,7 @@ const commitBlockListOperationSpec = {
     urlParameters: [url$1],
     headerParameters: [
         contentType,
-        accept,
+        accept$1,
         version$6,
         requestId,
         metadata$1,
@@ -110432,6 +110432,68 @@ var negotiator = {exports: {}};
 
 var charset = {exports: {}};
 
+/*!
+ * negotiator
+ * Copyright(c) 2026 Blake Embrey
+ * MIT Licensed
+ */
+
+var accept;
+var hasRequiredAccept;
+
+function requireAccept () {
+	if (hasRequiredAccept) return accept;
+	hasRequiredAccept = 1;
+
+	var contentType = requireDist$9();
+
+	/**
+	 * Module exports.
+	 * @private
+	 */
+
+	accept = parseAccept;
+
+	/**
+	 * Parse an Accept-style header.
+	 * @private
+	 */
+
+	function parseAccept(header) {
+	  var values = [];
+	  var index = 0;
+
+	  while (index < header.length) {
+	    var start = skipOptionalWhitespace(header, index);
+	    var parsed = contentType.parse(header, { comma: true, start: start });
+
+	    // `content-type` normalizes the type, but accept methods return original casing.
+	    parsed.type = header.slice(start, start + parsed.type.length);
+	    values.push(parsed);
+
+	    index = parsed.index + 1;
+	  }
+
+	  return values;
+	}
+
+	/**
+	 * Skip optional whitespace.
+	 * @private
+	 */
+
+	function skipOptionalWhitespace(header, index) {
+	  var cursor = index;
+
+	  while (header.charCodeAt(cursor) === 0x20 || header.charCodeAt(cursor) === 0x09) {
+	    cursor++;
+	  }
+
+	  return cursor;
+	}
+	return accept;
+}
+
 /**
  * negotiator
  * Copyright(c) 2012 Isaac Z. Schlueter
@@ -110446,6 +110508,8 @@ function requireCharset () {
 	if (hasRequiredCharset) return charset.exports;
 	hasRequiredCharset = 1;
 
+	var parseAccept = requireAccept();
+
 	/**
 	 * Module exports.
 	 * @public
@@ -110459,55 +110523,29 @@ function requireCharset () {
 	 * @private
 	 */
 
-	var simpleCharsetRegExp = /^\s*([^\s;]+)\s*(?:;(.*))?$/;
-
-	/**
-	 * Parse the Accept-Charset header.
-	 * @private
-	 */
-
 	function parseAcceptCharset(accept) {
-	  var accepts = accept.split(',');
+	  var accepts = parseAccept(accept);
 
 	  for (var i = 0, j = 0; i < accepts.length; i++) {
-	    var charset = parseCharset(accepts[i].trim(), i);
-
-	    if (charset) {
-	      accepts[j++] = charset;
-	    }
+	    var charset = formatCharset(accepts[i], i);
+	    if (charset) accepts[j++] = charset;
 	  }
 
-	  // trim accepts
 	  accepts.length = j;
-
 	  return accepts;
 	}
 
 	/**
-	 * Parse a charset from the Accept-Charset header.
+	 * Format a parsed charset for negotiation.
 	 * @private
 	 */
 
-	function parseCharset(str, i) {
-	  var match = simpleCharsetRegExp.exec(str);
-	  if (!match) return null;
-
-	  var charset = match[1];
-	  var q = 1;
-	  if (match[2]) {
-	    var params = match[2].split(';');
-	    for (var j = 0; j < params.length; j++) {
-	      var p = params[j].trim().split('=');
-	      if (p[0] === 'q') {
-	        q = parseFloat(p[1]);
-	        break;
-	      }
-	    }
-	  }
+	function formatCharset(parsed, i) {
+	  if (!parsed.type) return null;
 
 	  return {
-	    charset: charset,
-	    q: q,
+	    charset: parsed.type,
+	    q: parsed.parameters.q ? parseFloat(parsed.parameters.q) : 1,
 	    i: i
 	  };
 	}
@@ -110624,6 +110662,8 @@ function requireEncoding () {
 	if (hasRequiredEncoding) return encoding.exports;
 	hasRequiredEncoding = 1;
 
+	var parseAccept = requireAccept();
+
 	/**
 	 * Module exports.
 	 * @public
@@ -110637,20 +110677,13 @@ function requireEncoding () {
 	 * @private
 	 */
 
-	var simpleEncodingRegExp = /^\s*([^\s;]+)\s*(?:;(.*))?$/;
-
-	/**
-	 * Parse the Accept-Encoding header.
-	 * @private
-	 */
-
 	function parseAcceptEncoding(accept) {
-	  var accepts = accept.split(',');
+	  var accepts = parseAccept(accept);
 	  var hasIdentity = false;
 	  var minQuality = 1;
 
 	  for (var i = 0, j = 0; i < accepts.length; i++) {
-	    var encoding = parseEncoding(accepts[i].trim(), i);
+	    var encoding = formatEncoding(accepts[i], i);
 
 	    if (encoding) {
 	      accepts[j++] = encoding;
@@ -110671,37 +110704,21 @@ function requireEncoding () {
 	    };
 	  }
 
-	  // trim accepts
 	  accepts.length = j;
-
 	  return accepts;
 	}
 
 	/**
-	 * Parse an encoding from the Accept-Encoding header.
+	 * Format a parsed encoding for negotiation.
 	 * @private
 	 */
 
-	function parseEncoding(str, i) {
-	  var match = simpleEncodingRegExp.exec(str);
-	  if (!match) return null;
-
-	  var encoding = match[1];
-	  var q = 1;
-	  if (match[2]) {
-	    var params = match[2].split(';');
-	    for (var j = 0; j < params.length; j++) {
-	      var p = params[j].trim().split('=');
-	      if (p[0] === 'q') {
-	        q = parseFloat(p[1]);
-	        break;
-	      }
-	    }
-	  }
+	function formatEncoding(parsed, i) {
+	  if (!parsed.type) return null;
 
 	  return {
-	    encoding: encoding,
-	    q: q,
+	    encoding: parsed.type,
+	    q: parsed.parameters.q ? parseFloat(parsed.parameters.q) : 1,
 	    i: i
 	  };
 	}
@@ -110837,6 +110854,9 @@ function requireLanguage () {
 	if (hasRequiredLanguage) return language.exports;
 	hasRequiredLanguage = 1;
 
+	var contentType = requireDist$9();
+	var parseAccept = requireAccept();
+
 	/**
 	 * Module exports.
 	 * @public
@@ -110850,60 +110870,36 @@ function requireLanguage () {
 	 * @private
 	 */
 
-	var simpleLanguageRegExp = /^\s*([^\s\-;]+)(?:-([^\s;]+))?\s*(?:;(.*))?$/;
-
-	/**
-	 * Parse the Accept-Language header.
-	 * @private
-	 */
-
 	function parseAcceptLanguage(accept) {
-	  var accepts = accept.split(',');
+	  var accepts = parseAccept(accept);
 
 	  for (var i = 0, j = 0; i < accepts.length; i++) {
-	    var language = parseLanguage(accepts[i].trim(), i);
-
-	    if (language) {
-	      accepts[j++] = language;
-	    }
+	    var language = formatLanguage(accepts[i], i);
+	    if (language) accepts[j++] = language;
 	  }
 
-	  // trim accepts
 	  accepts.length = j;
-
 	  return accepts;
 	}
 
 	/**
-	 * Parse a language from the Accept-Language header.
+	 * Format a parsed language for negotiation.
 	 * @private
 	 */
 
-	function parseLanguage(str, i) {
-	  var match = simpleLanguageRegExp.exec(str);
-	  if (!match) return null;
+	function formatLanguage(parsed, i) {
+	  if (!parsed.type) return null;
 
-	  var prefix = match[1];
-	  var suffix = match[2];
-	  var full = prefix;
-
-	  if (suffix) full += "-" + suffix;
-
-	  var q = 1;
-	  if (match[3]) {
-	    var params = match[3].split(';');
-	    for (var j = 0; j < params.length; j++) {
-	      var p = params[j].split('=');
-	      if (p[0] === 'q') q = parseFloat(p[1]);
-	    }
-	  }
+	  var hyphen = parsed.type.indexOf('-');
+	  var prefix = hyphen === -1 ? parsed.type : parsed.type.slice(0, hyphen);
+	  var suffix = hyphen === -1 ? undefined : parsed.type.slice(hyphen + 1);
 
 	  return {
 	    prefix: prefix,
 	    suffix: suffix,
-	    q: q,
+	    q: parsed.parameters.q ? parseFloat(parsed.parameters.q) : 1,
 	    i: i,
-	    full: full
+	    full: parsed.type
 	  };
 	}
 
@@ -110932,7 +110928,7 @@ function requireLanguage () {
 	 */
 
 	function specify(language, spec, index) {
-	  var p = parseLanguage(language);
+	  var p = formatLanguage(contentType.parse(language), 0);
 	  if (!p) return null;
 	  var s = 0;
 	  if(spec.full.toLowerCase() === p.full.toLowerCase()){
@@ -111024,6 +111020,9 @@ function requireMediaType () {
 	if (hasRequiredMediaType) return mediaType.exports;
 	hasRequiredMediaType = 1;
 
+	var contentType = requireDist$9();
+	var parseAcceptHeader = requireAccept();
+
 	/**
 	 * Module exports.
 	 * @public
@@ -111037,71 +111036,35 @@ function requireMediaType () {
 	 * @private
 	 */
 
-	var simpleMediaTypeRegExp = /^\s*([^\s\/;]+)\/([^;\s]+)\s*(?:;(.*))?$/;
-
-	/**
-	 * Parse the Accept header.
-	 * @private
-	 */
-
 	function parseAccept(accept) {
-	  var accepts = splitMediaTypes(accept);
+	  var accepts = parseAcceptHeader(accept);
 
 	  for (var i = 0, j = 0; i < accepts.length; i++) {
-	    var mediaType = parseMediaType(accepts[i].trim(), i);
-
-	    if (mediaType) {
-	      accepts[j++] = mediaType;
-	    }
+	    var mediaType = formatMediaType(accepts[i], i);
+	    if (mediaType) accepts[j++] = mediaType;
 	  }
 
-	  // trim accepts
 	  accepts.length = j;
-
 	  return accepts;
 	}
 
 	/**
-	 * Parse a media type from the Accept header.
+	 * Format a parsed content type for negotiation.
 	 * @private
 	 */
 
-	function parseMediaType(str, i) {
-	  var match = simpleMediaTypeRegExp.exec(str);
-	  if (!match) return null;
+	function formatMediaType(parsed, i) {
+	  var slash = parsed.type.indexOf('/');
+	  if (slash === -1) return null;
 
-	  var params = Object.create(null);
-	  var q = 1;
-	  var subtype = match[2];
-	  var type = match[1];
+	  var q = parsed.parameters.q ? parseFloat(parsed.parameters.q) : 1;
 
-	  if (match[3]) {
-	    var kvps = splitParameters(match[3]).map(splitKeyValuePair);
-
-	    for (var j = 0; j < kvps.length; j++) {
-	      var pair = kvps[j];
-	      var key = pair[0].toLowerCase();
-	      var val = pair[1];
-
-	      // get the value, unwrapping quotes
-	      var value = val && val[0] === '"' && val[val.length - 1] === '"'
-	        ? val.slice(1, -1)
-	        : val;
-
-	      if (key === 'q') {
-	        q = parseFloat(value);
-	        break;
-	      }
-
-	      // store parameter
-	      params[key] = value;
-	    }
-	  }
+	  delete parsed.parameters.q;
 
 	  return {
-	    type: type,
-	    subtype: subtype,
-	    params: params,
+	    type: parsed.type.slice(0, slash),
+	    subtype: parsed.type.slice(slash + 1),
+	    params: parsed.parameters,
 	    q: q,
 	    i: i
 	  };
@@ -111132,7 +111095,7 @@ function requireMediaType () {
 	 */
 
 	function specify(type, spec, index) {
-	  var p = parseMediaType(type);
+	  var p = formatMediaType(contentType.parse(type), 0);
 	  var s = 0;
 
 	  if (!p) {
@@ -111222,91 +111185,6 @@ function requireMediaType () {
 
 	function isQuality(spec) {
 	  return spec.q > 0;
-	}
-
-	/**
-	 * Count the number of quotes in a string.
-	 * @private
-	 */
-
-	function quoteCount(string) {
-	  var count = 0;
-	  var index = 0;
-
-	  while ((index = string.indexOf('"', index)) !== -1) {
-	    count++;
-	    index++;
-	  }
-
-	  return count;
-	}
-
-	/**
-	 * Split a key value pair.
-	 * @private
-	 */
-
-	function splitKeyValuePair(str) {
-	  var index = str.indexOf('=');
-	  var key;
-	  var val;
-
-	  if (index === -1) {
-	    key = str;
-	  } else {
-	    key = str.slice(0, index);
-	    val = str.slice(index + 1);
-	  }
-
-	  return [key, val];
-	}
-
-	/**
-	 * Split an Accept header into media types.
-	 * @private
-	 */
-
-	function splitMediaTypes(accept) {
-	  var accepts = accept.split(',');
-
-	  for (var i = 1, j = 0; i < accepts.length; i++) {
-	    if (quoteCount(accepts[j]) % 2 == 0) {
-	      accepts[++j] = accepts[i];
-	    } else {
-	      accepts[j] += ',' + accepts[i];
-	    }
-	  }
-
-	  // trim accepts
-	  accepts.length = j + 1;
-
-	  return accepts;
-	}
-
-	/**
-	 * Split a string of parameters.
-	 * @private
-	 */
-
-	function splitParameters(str) {
-	  var parameters = str.split(';');
-
-	  for (var i = 1, j = 0; i < parameters.length; i++) {
-	    if (quoteCount(parameters[j]) % 2 == 0) {
-	      parameters[++j] = parameters[i];
-	    } else {
-	      parameters[j] += ';' + parameters[i];
-	    }
-	  }
-
-	  // trim parameters
-	  parameters.length = j + 1;
-
-	  for (var i = 0; i < parameters.length; i++) {
-	    parameters[i] = parameters[i].trim();
-	  }
-
-	  return parameters;
 	}
 	return mediaType.exports;
 }
