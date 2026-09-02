@@ -119699,7 +119699,8 @@ function requireUtil () {
 	if (hasRequiredUtil) return util;
 	hasRequiredUtil = 1;
 	Object.defineProperty(util, "__esModule", { value: true });
-	util.shuffleArray = util.SocksClientError = void 0;
+	util.SocksClientError = void 0;
+	util.shuffleArray = shuffleArray;
 	/**
 	 * Error wrapper for SocksClient
 	 */
@@ -119720,7 +119721,6 @@ function requireUtil () {
 	        [array[i], array[j]] = [array[j], array[i]];
 	    }
 	}
-	util.shuffleArray = shuffleArray;
 	
 	return util;
 }
@@ -122354,7 +122354,11 @@ function requireHelpers () {
 	if (hasRequiredHelpers) return helpers$1;
 	hasRequiredHelpers = 1;
 	Object.defineProperty(helpers$1, "__esModule", { value: true });
-	helpers$1.ipToBuffer = helpers$1.int32ToIpv4 = helpers$1.ipv4ToInt32 = helpers$1.validateSocksClientChainOptions = helpers$1.validateSocksClientOptions = void 0;
+	helpers$1.validateSocksClientOptions = validateSocksClientOptions;
+	helpers$1.validateSocksClientChainOptions = validateSocksClientChainOptions;
+	helpers$1.ipv4ToInt32 = ipv4ToInt32;
+	helpers$1.int32ToIpv4 = int32ToIpv4;
+	helpers$1.ipToBuffer = ipToBuffer;
 	const util_1 = requireUtil();
 	const constants_1 = requireConstants$2();
 	const stream = stream__default;
@@ -122394,7 +122398,6 @@ function requireHelpers () {
 	        throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsExistingSocket, options);
 	    }
 	}
-	helpers$1.validateSocksClientOptions = validateSocksClientOptions;
 	/**
 	 * Validates the SocksClientChainOptions
 	 * @param options { SocksClientChainOptions }
@@ -122427,7 +122430,6 @@ function requireHelpers () {
 	        throw new util_1.SocksClientError(constants_1.ERRORS.InvalidSocksClientOptionsTimeout, options);
 	    }
 	}
-	helpers$1.validateSocksClientChainOptions = validateSocksClientChainOptions;
 	function validateCustomProxyAuth(proxy, options) {
 	    if (proxy.custom_auth_method !== undefined) {
 	        // Invalid auth method range
@@ -122487,7 +122489,6 @@ function requireHelpers () {
 	    // Convert the IPv4 address parts to an integer
 	    return address.toArray().reduce((acc, part) => (acc << 8) + part, 0) >>> 0;
 	}
-	helpers$1.ipv4ToInt32 = ipv4ToInt32;
 	function int32ToIpv4(int32) {
 	    // Extract each byte (octet) from the 32-bit integer
 	    const octet1 = (int32 >>> 24) & 0xff;
@@ -122497,7 +122498,6 @@ function requireHelpers () {
 	    // Combine the octets into a string in IPv4 format
 	    return [octet1, octet2, octet3, octet4].join('.');
 	}
-	helpers$1.int32ToIpv4 = int32ToIpv4;
 	function ipToBuffer(ip) {
 	    if (net.isIPv4(ip)) {
 	        // Handle IPv4 addresses
@@ -122517,7 +122517,6 @@ function requireHelpers () {
 	        throw new Error('Invalid IP address format');
 	    }
 	}
-	helpers$1.ipToBuffer = ipToBuffer;
 	
 	return helpers$1;
 }
