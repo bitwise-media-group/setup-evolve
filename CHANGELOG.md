@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3](https://github.com/bitwise-media-group/setup-evolve/compare/v1.0.2...v1.0.3) (2026-09-06)
+
+
+### Bug Fixes
+
+* **deps:** update bitwise-media-group/github-workflows action to v6.1.1 ([#54](https://github.com/bitwise-media-group/setup-evolve/issues/54)) ([76b4af9](https://github.com/bitwise-media-group/setup-evolve/commit/76b4af9cedc98a6465fc8fa6e4f3bd35bc6136f7))
+* **deps:** update bitwise-media-group/github-workflows action to v6.2.0 ([#61](https://github.com/bitwise-media-group/setup-evolve/issues/61)) ([4c9db89](https://github.com/bitwise-media-group/setup-evolve/commit/4c9db8914176c6cd4bda48315327c74c2d4b049a))
+
 ## [1.0.2](https://github.com/bitwise-media-group/setup-evolve/compare/v1.0.1...v1.0.2) (2026-06-24)
 
 
