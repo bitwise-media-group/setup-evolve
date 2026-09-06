@@ -44,24 +44,24 @@ import * as stream$1 from 'stream';
 import stream__default, { Readable } from 'stream';
 import * as path$2 from 'node:path';
 import path__default$1 from 'node:path';
-import require$$0$f, { URL as URL$1 } from 'url';
+import require$$0$g, { URL as URL$1 } from 'url';
 import * as require$$0$6 from 'buffer';
 import require$$0__default$3, { Buffer as Buffer$1 } from 'buffer';
 import os$1, { EOL as EOL$2 } from 'node:os';
 import process$1 from 'node:process';
 import https$1 from 'node:https';
 import { createHmac, createHash } from 'node:crypto';
-import require$$1$6 from 'tty';
+import require$$0$f from 'tty';
 import fs$2, { createReadStream } from 'node:fs';
 import * as fs$1 from 'node:fs/promises';
 import fs__default$1 from 'node:fs/promises';
 import { pipeline as pipeline$1 } from 'node:stream/promises';
-import require$$1$7 from 'http2';
+import require$$1$6 from 'http2';
 import require$$2$3 from 'node:string_decoder';
-import require$$0$g from 'zlib';
+import require$$0$h from 'zlib';
 import * as require$$0$7 from 'dns';
 import require$$0__default$4 from 'dns';
-import require$$0$h from 'fs/promises';
+import require$$0$i from 'fs/promises';
 import require$$3$1 from 'timers/promises';
 
 // We use any as a valid input type
@@ -39224,165 +39224,6 @@ function requireBrowser () {
 
 var node$1 = {exports: {}};
 
-var hasFlag;
-var hasRequiredHasFlag;
-
-function requireHasFlag () {
-	if (hasRequiredHasFlag) return hasFlag;
-	hasRequiredHasFlag = 1;
-
-	hasFlag = (flag, argv = process.argv) => {
-		const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
-		const position = argv.indexOf(prefix + flag);
-		const terminatorPosition = argv.indexOf('--');
-		return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
-	};
-	return hasFlag;
-}
-
-var supportsColor_1;
-var hasRequiredSupportsColor;
-
-function requireSupportsColor () {
-	if (hasRequiredSupportsColor) return supportsColor_1;
-	hasRequiredSupportsColor = 1;
-	const os = os__default;
-	const tty = require$$1$6;
-	const hasFlag = requireHasFlag();
-
-	const {env} = process;
-
-	let forceColor;
-	if (hasFlag('no-color') ||
-		hasFlag('no-colors') ||
-		hasFlag('color=false') ||
-		hasFlag('color=never')) {
-		forceColor = 0;
-	} else if (hasFlag('color') ||
-		hasFlag('colors') ||
-		hasFlag('color=true') ||
-		hasFlag('color=always')) {
-		forceColor = 1;
-	}
-
-	if ('FORCE_COLOR' in env) {
-		if (env.FORCE_COLOR === 'true') {
-			forceColor = 1;
-		} else if (env.FORCE_COLOR === 'false') {
-			forceColor = 0;
-		} else {
-			forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
-		}
-	}
-
-	function translateLevel(level) {
-		if (level === 0) {
-			return false;
-		}
-
-		return {
-			level,
-			hasBasic: true,
-			has256: level >= 2,
-			has16m: level >= 3
-		};
-	}
-
-	function supportsColor(haveStream, streamIsTTY) {
-		if (forceColor === 0) {
-			return 0;
-		}
-
-		if (hasFlag('color=16m') ||
-			hasFlag('color=full') ||
-			hasFlag('color=truecolor')) {
-			return 3;
-		}
-
-		if (hasFlag('color=256')) {
-			return 2;
-		}
-
-		if (haveStream && !streamIsTTY && forceColor === undefined) {
-			return 0;
-		}
-
-		const min = forceColor || 0;
-
-		if (env.TERM === 'dumb') {
-			return min;
-		}
-
-		if (process.platform === 'win32') {
-			// Windows 10 build 10586 is the first Windows release that supports 256 colors.
-			// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
-			const osRelease = os.release().split('.');
-			if (
-				Number(osRelease[0]) >= 10 &&
-				Number(osRelease[2]) >= 10586
-			) {
-				return Number(osRelease[2]) >= 14931 ? 3 : 2;
-			}
-
-			return 1;
-		}
-
-		if ('CI' in env) {
-			if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
-				return 1;
-			}
-
-			return min;
-		}
-
-		if ('TEAMCITY_VERSION' in env) {
-			return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
-		}
-
-		if (env.COLORTERM === 'truecolor') {
-			return 3;
-		}
-
-		if ('TERM_PROGRAM' in env) {
-			const version = parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
-
-			switch (env.TERM_PROGRAM) {
-				case 'iTerm.app':
-					return version >= 3 ? 3 : 2;
-				case 'Apple_Terminal':
-					return 2;
-				// No default
-			}
-		}
-
-		if (/-256(color)?$/i.test(env.TERM)) {
-			return 2;
-		}
-
-		if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
-			return 1;
-		}
-
-		if ('COLORTERM' in env) {
-			return 1;
-		}
-
-		return min;
-	}
-
-	function getSupportLevel(stream) {
-		const level = supportsColor(stream, stream && stream.isTTY);
-		return translateLevel(level);
-	}
-
-	supportsColor_1 = {
-		supportsColor: getSupportLevel,
-		stdout: translateLevel(supportsColor(true, tty.isatty(1))),
-		stderr: translateLevel(supportsColor(true, tty.isatty(2)))
-	};
-	return supportsColor_1;
-}
-
 /**
  * Module dependencies.
  */
@@ -39393,7 +39234,7 @@ function requireNode$1 () {
 	if (hasRequiredNode$1) return node$1.exports;
 	hasRequiredNode$1 = 1;
 	(function (module, exports) {
-		const tty = require$$1$6;
+		const tty = require$$0$f;
 		const util = require$$0__default;
 
 		/**
@@ -39420,7 +39261,7 @@ function requireNode$1 () {
 		try {
 			// Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
 			// eslint-disable-next-line import/no-extraneous-dependencies
-			const supportsColor = requireSupportsColor();
+			const supportsColor = require('supports-color');
 
 			if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
 				exports.colors = [
@@ -40086,7 +39927,7 @@ function requireDist$b () {
 	const assert_1 = __importDefault(assert$1);
 	const debug_1 = __importDefault(requireSrc());
 	const agent_base_1 = requireDist$c();
-	const url_1 = require$$0$f;
+	const url_1 = require$$0$g;
 	const parse_proxy_response_1 = requireParseProxyResponse();
 	const debug = (0, debug_1.default)('https-proxy-agent');
 	const setServernameFromNonIpHost = (options) => {
@@ -40277,7 +40118,7 @@ function requireDist$a () {
 	const debug_1 = __importDefault(requireSrc());
 	const events_1 = require$$0__default$1;
 	const agent_base_1 = requireDist$c();
-	const url_1 = require$$0$f;
+	const url_1 = require$$0$g;
 	const debug = (0, debug_1.default)('http-proxy-agent');
 	/**
 	 * The `HttpProxyAgent` implements an HTTP Agent subclass that connects
@@ -96109,7 +95950,7 @@ function requireConstants$3 () {
 	// Node v6 didn't export this, so we just hard code the version and rely
 	// on all the other hard-coded values from zlib v4736.  When node v6
 	// support drops, we can just export the realZlibConstants object.
-	const zlib_1 = __importDefault(require$$0$g);
+	const zlib_1 = __importDefault(require$$0$h);
 	/* c8 ignore start */
 	const realZlibConstants = zlib_1.default.constants || { ZLIB_VERNUM: 4736 };
 	/* c8 ignore stop */
@@ -96272,7 +96113,7 @@ function requireCommonjs$4 () {
 		const assert_1 = __importDefault(assert$1);
 		const buffer_1 = require$$0__default$3;
 		const minipass_1 = requireCommonjs$5();
-		const realZlib = __importStar(require$$0$g);
+		const realZlib = __importStar(require$$0$h);
 		const constants_js_1 = requireConstants$3();
 		var constants_js_2 = requireConstants$3();
 		Object.defineProperty(exports, "constants", { enumerable: true, get: function () { return constants_js_2.constants; } });
@@ -108895,7 +108736,7 @@ var hasRequiredRequest;
 function requireRequest () {
 	if (hasRequiredRequest) return request;
 	hasRequiredRequest = 1;
-	const { URL } = require$$0$f;
+	const { URL } = require$$0$g;
 	const { Minipass } = requireCommonjs$5();
 	const Headers = requireHeaders();
 	const { exportNodeCompatibleHeaders } = Headers;
@@ -109210,7 +109051,7 @@ var hasRequiredLib$9;
 function requireLib$9 () {
 	if (hasRequiredLib$9) return lib$8;
 	hasRequiredLib$9 = 1;
-	const { URL } = require$$0$f;
+	const { URL } = require$$0$g;
 	const http = http__default;
 	const https = https__default;
 	const zlib = requireCommonjs$4();
@@ -114192,7 +114033,7 @@ function requirePolyfill () {
 	  symlink,
 	  unlink,
 	  utimes,
-	} = require$$0$h;
+	} = require$$0$i;
 	const {
 	  dirname,
 	  isAbsolute,
@@ -114202,7 +114043,7 @@ function requirePolyfill () {
 	  sep,
 	  toNamespacedPath,
 	} = path__default;
-	const { fileURLToPath } = require$$0$f;
+	const { fileURLToPath } = require$$0$g;
 
 	const defaultOptions = {
 	  dereference: false,
@@ -114582,7 +114423,7 @@ var hasRequiredCp;
 function requireCp () {
 	if (hasRequiredCp) return cp_1;
 	hasRequiredCp = 1;
-	const fs = require$$0$h;
+	const fs = require$$0$i;
 	const getOptions = requireGetOptions();
 	const node = requireNode();
 	const polyfill = requirePolyfill();
@@ -114616,7 +114457,7 @@ function requireWithTempDir () {
 	const { join, sep } = path__default;
 
 	const getOptions = requireGetOptions();
-	const { mkdir, mkdtemp, rm } = require$$0$h;
+	const { mkdir, mkdtemp, rm } = require$$0$i;
 
 	// create a temp directory, ensure its permissions match its parent, then call
 	// the supplied function passing it the path to the directory. clean up after
@@ -114661,7 +114502,7 @@ var hasRequiredReaddirScoped;
 function requireReaddirScoped () {
 	if (hasRequiredReaddirScoped) return readdirScoped_1;
 	hasRequiredReaddirScoped = 1;
-	const { readdir } = require$$0$h;
+	const { readdir } = require$$0$i;
 	const { join } = path__default;
 
 	const readdirScoped = async (dir) => {
@@ -114691,7 +114532,7 @@ function requireMoveFile () {
 	if (hasRequiredMoveFile) return moveFile_1;
 	hasRequiredMoveFile = 1;
 	const { dirname, join, resolve, relative, isAbsolute } = path__default;
-	const fs = require$$0$h;
+	const fs = require$$0$i;
 
 	const pathExists = async path => {
 	  try {
@@ -114799,7 +114640,7 @@ function requireCacheDir () {
 	if (hasRequiredCacheDir) return cacheDir;
 	hasRequiredCacheDir = 1;
 
-	const fs = require$$0$h;
+	const fs = require$$0$i;
 	const path = path__default;
 
 	const tagContent = `Signature: 8a477f597d28d172789f06886806bc55
@@ -114837,7 +114678,7 @@ function requireTmp () {
 
 	const crypto = require$$0__default$2;
 	const { withTempDir } = requireLib$7();
-	const fs = require$$0$h;
+	const fs = require$$0$i;
 	const path = path__default;
 	const cacheDir = requireCacheDir();
 
@@ -114945,7 +114786,7 @@ function requireEntryIndex () {
 	  readdir,
 	  rm,
 	  writeFile,
-	} = require$$0$h;
+	} = require$$0$i;
 	const { Minipass } = requireCommonjs$5();
 	const path = path__default;
 	const ssri = requireLib$8();
@@ -115832,7 +115673,7 @@ function requireRead () {
 	if (hasRequiredRead) return read.exports;
 	hasRequiredRead = 1;
 
-	const fs = require$$0$h;
+	const fs = require$$0$i;
 	const fsm = requireLib$6();
 	const ssri = requireLib$8();
 	const contentPath = requirePath();
@@ -116190,7 +116031,7 @@ function requireWrite () {
 	const events = require$$0__default$1;
 
 	const contentPath = requirePath();
-	const fs = require$$0$h;
+	const fs = require$$0$i;
 	const { moveFile } = requireLib$7();
 	const { Minipass } = requireCommonjs$5();
 	const Pipeline = requireMinipassPipeline();
@@ -116523,7 +116364,7 @@ function requireRm$1 () {
 	if (hasRequiredRm$1) return rm_1;
 	hasRequiredRm$1 = 1;
 
-	const fs = require$$0$h;
+	const fs = require$$0$i;
 	const contentPath = requirePath();
 	const { hasContent } = requireRead();
 
@@ -116548,7 +116389,7 @@ function requireRm () {
 	if (hasRequiredRm) return rm.exports;
 	hasRequiredRm = 1;
 
-	const { rm: rm$1 } = require$$0$h;
+	const { rm: rm$1 } = require$$0$i;
 	const glob = requireGlob();
 	const index = requireEntryIndex();
 	const memo = requireMemoization();
@@ -116595,7 +116436,7 @@ function requireVerify$1 () {
 	  stat,
 	  truncate,
 	  writeFile,
-	} = require$$0$h;
+	} = require$$0$i;
 	const contentPath = requirePath();
 	const fsm = requireLib$6();
 	const glob = requireGlob();
@@ -116954,7 +116795,7 @@ var hasRequiredKey$3;
 function requireKey$3 () {
 	if (hasRequiredKey$3) return key$3;
 	hasRequiredKey$3 = 1;
-	const { URL, format } = require$$0$f;
+	const { URL, format } = require$$0$g;
 
 	// options passed to url.format() when generating a key
 	const formatOptions = {
@@ -124514,7 +124355,7 @@ function requireEntry$2 () {
 	const { Minipass } = requireCommonjs$5();
 	const MinipassFlush = requireMinipassFlush();
 	const cacache = requireLib$5();
-	const url = require$$0$f;
+	const url = require$$0$g;
 
 	const CachingMinipassPipeline = requirePipeline();
 	const CachePolicy = requirePolicy$1();
@@ -125050,7 +124891,7 @@ function requireFetch$1 () {
 	hasRequiredFetch$1 = 1;
 
 	const { FetchError, Request, isRedirect } = requireLib$9();
-	const url = require$$0$f;
+	const url = require$$0$g;
 
 	const CachePolicy = requirePolicy$1();
 	const cache = requireCache();
@@ -125243,7 +125084,7 @@ function requireFetch () {
 	limitations under the License.
 	*/
 	const promise_retry_1 = requireLib$b();
-	const http2_1 = require$$1$7;
+	const http2_1 = require$$1$6;
 	const make_fetch_happen_1 = __importDefault(requireLib$1());
 	const proc_log_1 = requireLib$4();
 	const util_1 = requireUtil$1();
@@ -131674,7 +131515,7 @@ function requireTmpfile () {
 	};
 	Object.defineProperty(tmpfile, "__esModule", { value: true });
 	tmpfile.withTempFile = void 0;
-	const promises_1 = __importDefault(require$$0$h);
+	const promises_1 = __importDefault(require$$0$i);
 	const os_1 = __importDefault(os__default);
 	const path_1 = __importDefault(path__default);
 	// Invokes the given handler with the path to a temporary file. The file
@@ -132102,7 +131943,7 @@ function requireUrl () {
 	hasRequiredUrl = 1;
 	Object.defineProperty(url, "__esModule", { value: true });
 	url.join = join;
-	const url_1 = require$$0$f;
+	const url_1 = require$$0$g;
 	function join(base, path) {
 	    return new url_1.URL(ensureTrailingSlash(base) + removeLeadingSlash(path)).toString();
 	}
