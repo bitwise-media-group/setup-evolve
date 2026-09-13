@@ -135303,7 +135303,7 @@ async function pMap(
 		let isIterableDone = false;
 		let resolvingCount = 0;
 		let currentIndex = 0;
-		const iterator = iterable[Symbol.iterator] === undefined ? iterable[Symbol.asyncIterator]() : iterable[Symbol.iterator]();
+		const iterator = iterable[Symbol.asyncIterator] === undefined ? iterable[Symbol.iterator]() : iterable[Symbol.asyncIterator]();
 
 		const signalListener = () => {
 			reject(signal.reason);
@@ -135319,10 +135319,18 @@ async function pMap(
 		};
 
 		const reject = reason => {
+			if (isResolved) {
+				return;
+			}
+
 			isRejected = true;
 			isResolved = true;
 			reject_(reason);
 			cleanup();
+
+			if (!isIterableDone) {
+				closeIterator(iterator);
+			}
 		};
 
 		if (signal) {
@@ -135339,7 +135347,8 @@ async function pMap(
 				return;
 			}
 
-			const nextItem = await iterator.next();
+			// Once the source reported `done`, don't pull again like `for await`. A source like a queue may block in `next()` after it is exhausted, which would hang the completion below.
+			const nextItem = isIterableDone ? {done: true} : await iterator.next();
 
 			const index = currentIndex;
 			currentIndex++;
@@ -135402,26 +135411,25 @@ async function pMap(
 					}
 
 					result[index] = value;
-
-					resolvingCount--;
-					await next();
 				} catch (error) {
 					if (stopOnError) {
 						reject(error);
-					} else {
-						errors.push(error);
-						resolvingCount--;
-
-						// In that case we can't really continue regardless of `stopOnError` state
-						// since an iterable is likely to continue throwing after it throws once.
-						// If we continue calling `next()` indefinitely we will likely end up
-						// in an infinite loop of failed iteration.
-						try {
-							await next();
-						} catch (error) {
-							reject(error);
-						}
+						return;
 					}
+
+					errors.push(error);
+				}
+
+				resolvingCount--;
+
+				// If the iterable throws we can't really continue regardless of `stopOnError` state
+				// since an iterable is likely to continue throwing after it throws once.
+				// If we continue calling `next()` indefinitely we will likely end up
+				// in an infinite loop of failed iteration.
+				try {
+					await next();
+				} catch (error) {
+					reject(error);
 				}
 			})();
 		};
@@ -135451,6 +135459,14 @@ async function pMap(
 }
 
 const pMapSkip = Symbol('skip');
+
+// Close the source so it can release its resources, like `for await` does.
+// Callers must not await this so a source that is blocked in `next()` cannot block them.
+async function closeIterator(iterator) {
+	try {
+		await iterator.return?.();
+	} catch {}
+}
 
 var index = /*#__PURE__*/Object.freeze({
     __proto__: null,
