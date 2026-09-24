@@ -56195,8 +56195,8 @@ class UserDelegationKeyCredential {
 
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
-const SDK_VERSION = "12.33.0";
-const SERVICE_VERSION = "2026-06-06";
+const SDK_VERSION = "12.34.0";
+const SERVICE_VERSION = "2026-10-06";
 const BLOCK_BLOB_MAX_UPLOAD_BLOB_BYTES = 256 * 1024 * 1024; // 256MB
 const BLOCK_BLOB_MAX_STAGE_BLOCK_BYTES = 4000 * 1024 * 1024; // 4000MB
 const BLOCK_BLOB_MAX_BLOCKS = 50000;
@@ -60592,6 +60592,66 @@ const ContainerListBlobFlatSegmentExceptionHeaders = {
         },
     },
 };
+const ContainerListBlobFlatSegmentApacheArrowHeaders = {
+    serializedName: "Container_listBlobFlatSegmentApacheArrowHeaders",
+    type: {
+        name: "Composite",
+        className: "ContainerListBlobFlatSegmentApacheArrowHeaders",
+        modelProperties: {
+            contentType: {
+                serializedName: "content-type",
+                xmlName: "content-type",
+                type: {
+                    name: "String",
+                },
+            },
+            clientRequestId: {
+                serializedName: "x-ms-client-request-id",
+                xmlName: "x-ms-client-request-id",
+                type: {
+                    name: "String",
+                },
+            },
+            requestId: {
+                serializedName: "x-ms-request-id",
+                xmlName: "x-ms-request-id",
+                type: {
+                    name: "String",
+                },
+            },
+            version: {
+                serializedName: "x-ms-version",
+                xmlName: "x-ms-version",
+                type: {
+                    name: "String",
+                },
+            },
+            date: {
+                serializedName: "date",
+                xmlName: "date",
+                type: {
+                    name: "DateTimeRfc1123",
+                },
+            },
+        },
+    },
+};
+const ContainerListBlobFlatSegmentApacheArrowExceptionHeaders = {
+    serializedName: "Container_listBlobFlatSegmentApacheArrowExceptionHeaders",
+    type: {
+        name: "Composite",
+        className: "ContainerListBlobFlatSegmentApacheArrowExceptionHeaders",
+        modelProperties: {
+            errorCode: {
+                serializedName: "x-ms-error-code",
+                xmlName: "x-ms-error-code",
+                type: {
+                    name: "String",
+                },
+            },
+        },
+    },
+};
 const ContainerListBlobHierarchySegmentHeaders = {
     serializedName: "Container_listBlobHierarchySegmentHeaders",
     type: {
@@ -60648,6 +60708,66 @@ const ContainerListBlobHierarchySegmentExceptionHeaders = {
     type: {
         name: "Composite",
         className: "ContainerListBlobHierarchySegmentExceptionHeaders",
+        modelProperties: {
+            errorCode: {
+                serializedName: "x-ms-error-code",
+                xmlName: "x-ms-error-code",
+                type: {
+                    name: "String",
+                },
+            },
+        },
+    },
+};
+const ContainerListBlobHierarchySegmentApacheArrowHeaders = {
+    serializedName: "Container_listBlobHierarchySegmentApacheArrowHeaders",
+    type: {
+        name: "Composite",
+        className: "ContainerListBlobHierarchySegmentApacheArrowHeaders",
+        modelProperties: {
+            contentType: {
+                serializedName: "content-type",
+                xmlName: "content-type",
+                type: {
+                    name: "String",
+                },
+            },
+            clientRequestId: {
+                serializedName: "x-ms-client-request-id",
+                xmlName: "x-ms-client-request-id",
+                type: {
+                    name: "String",
+                },
+            },
+            requestId: {
+                serializedName: "x-ms-request-id",
+                xmlName: "x-ms-request-id",
+                type: {
+                    name: "String",
+                },
+            },
+            version: {
+                serializedName: "x-ms-version",
+                xmlName: "x-ms-version",
+                type: {
+                    name: "String",
+                },
+            },
+            date: {
+                serializedName: "date",
+                xmlName: "date",
+                type: {
+                    name: "DateTimeRfc1123",
+                },
+            },
+        },
+    },
+};
+const ContainerListBlobHierarchySegmentApacheArrowExceptionHeaders = {
+    serializedName: "Container_listBlobHierarchySegmentApacheArrowExceptionHeaders",
+    type: {
+        name: "Composite",
+        className: "ContainerListBlobHierarchySegmentApacheArrowExceptionHeaders",
         modelProperties: {
             errorCode: {
                 serializedName: "x-ms-error-code",
@@ -61085,6 +61205,34 @@ const BlobDownloadHeaders = {
                 xmlName: "x-ms-structured-content-length",
                 type: {
                     name: "Number",
+                },
+            },
+            accessTier: {
+                serializedName: "x-ms-access-tier",
+                xmlName: "x-ms-access-tier",
+                type: {
+                    name: "String",
+                },
+            },
+            accessTierInferred: {
+                serializedName: "x-ms-access-tier-inferred",
+                xmlName: "x-ms-access-tier-inferred",
+                type: {
+                    name: "Boolean",
+                },
+            },
+            accessTierChangedOn: {
+                serializedName: "x-ms-access-tier-change-time",
+                xmlName: "x-ms-access-tier-change-time",
+                type: {
+                    name: "DateTimeRfc1123",
+                },
+            },
+            smartAccessTier: {
+                serializedName: "x-ms-smart-access-tier",
+                xmlName: "x-ms-smart-access-tier",
+                type: {
+                    name: "String",
                 },
             },
             errorCode: {
@@ -64702,6 +64850,13 @@ const BlockBlobUploadHeaders = {
                     name: "ByteArray",
                 },
             },
+            xMsContentCrc64: {
+                serializedName: "x-ms-content-crc64",
+                xmlName: "x-ms-content-crc64",
+                type: {
+                    name: "ByteArray",
+                },
+            },
             clientRequestId: {
                 serializedName: "x-ms-client-request-id",
                 xmlName: "x-ms-client-request-id",
@@ -64814,6 +64969,13 @@ const BlockBlobPutBlobFromUrlHeaders = {
             contentMD5: {
                 serializedName: "content-md5",
                 xmlName: "content-md5",
+                type: {
+                    name: "ByteArray",
+                },
+            },
+            xMsContentCrc64: {
+                serializedName: "x-ms-content-crc64",
+                xmlName: "x-ms-content-crc64",
                 type: {
                     name: "ByteArray",
                 },
@@ -65436,8 +65598,12 @@ var Mappers = /*#__PURE__*/Object.freeze({
     ContainerGetPropertiesExceptionHeaders: ContainerGetPropertiesExceptionHeaders,
     ContainerGetPropertiesHeaders: ContainerGetPropertiesHeaders,
     ContainerItem: ContainerItem,
+    ContainerListBlobFlatSegmentApacheArrowExceptionHeaders: ContainerListBlobFlatSegmentApacheArrowExceptionHeaders,
+    ContainerListBlobFlatSegmentApacheArrowHeaders: ContainerListBlobFlatSegmentApacheArrowHeaders,
     ContainerListBlobFlatSegmentExceptionHeaders: ContainerListBlobFlatSegmentExceptionHeaders,
     ContainerListBlobFlatSegmentHeaders: ContainerListBlobFlatSegmentHeaders,
+    ContainerListBlobHierarchySegmentApacheArrowExceptionHeaders: ContainerListBlobHierarchySegmentApacheArrowExceptionHeaders,
+    ContainerListBlobHierarchySegmentApacheArrowHeaders: ContainerListBlobHierarchySegmentApacheArrowHeaders,
     ContainerListBlobHierarchySegmentExceptionHeaders: ContainerListBlobHierarchySegmentExceptionHeaders,
     ContainerListBlobHierarchySegmentHeaders: ContainerListBlobHierarchySegmentHeaders,
     ContainerProperties: ContainerProperties,
@@ -65596,7 +65762,7 @@ const timeoutInSeconds = {
 const version$6 = {
     parameterPath: "version",
     mapper: {
-        defaultValue: "2026-06-06",
+        defaultValue: "2026-10-06",
         isConstant: true,
         serializedName: "x-ms-version",
         type: {
@@ -66136,6 +66302,27 @@ const startFrom = {
     mapper: {
         serializedName: "startFrom",
         xmlName: "startFrom",
+        type: {
+            name: "String",
+        },
+    },
+};
+const accept2 = {
+    parameterPath: "accept",
+    mapper: {
+        defaultValue: "application/vnd.apache.arrow.stream,application/xml",
+        isConstant: true,
+        serializedName: "Accept",
+        type: {
+            name: "String",
+        },
+    },
+};
+const endBefore = {
+    parameterPath: ["options", "endBefore"],
+    mapper: {
+        serializedName: "endBefore",
+        xmlName: "endBefore",
         type: {
             name: "String",
         },
@@ -66896,7 +67083,7 @@ const body1 = {
         },
     },
 };
-const accept2 = {
+const accept3 = {
     parameterPath: "accept",
     mapper: {
         defaultValue: "application/xml",
@@ -67731,6 +67918,14 @@ class ContainerImpl {
         return this.client.sendOperationRequest({ options }, listBlobFlatSegmentOperationSpec);
     }
     /**
+     * The List Blobs operation returns a list of the blobs under the specified container. This operation
+     * is for Apache Arrow use case so response is returned as raw to be deserialized by the client.
+     * @param options The options parameters.
+     */
+    listBlobFlatSegmentApacheArrow(options) {
+        return this.client.sendOperationRequest({ options }, listBlobFlatSegmentApacheArrowOperationSpec);
+    }
+    /**
      * [Update] The List Blobs operation returns a list of the blobs under the specified container
      * @param delimiter When the request includes this parameter, the operation returns a BlobPrefix
      *                  element in the response body that acts as a placeholder for all blobs whose names begin with the
@@ -67740,6 +67935,19 @@ class ContainerImpl {
      */
     listBlobHierarchySegment(delimiter, options) {
         return this.client.sendOperationRequest({ delimiter, options }, listBlobHierarchySegmentOperationSpec);
+    }
+    /**
+     * [Update] The List Blobs operation returns a list of the blobs under the specified container. This
+     * operation is for Apache Arrow use case so response is returned as raw to be deserialized by the
+     * client.
+     * @param delimiter When the request includes this parameter, the operation returns a BlobPrefix
+     *                  element in the response body that acts as a placeholder for all blobs whose names begin with the
+     *                  same substring up to the appearance of the delimiter character. The delimiter may be a single
+     *                  character or a string.
+     * @param options The options parameters.
+     */
+    listBlobHierarchySegmentApacheArrow(delimiter, options) {
+        return this.client.sendOperationRequest({ delimiter, options }, listBlobHierarchySegmentApacheArrowOperationSpec);
     }
     /**
      * Returns the sku name and account kind
@@ -68232,6 +68440,42 @@ const listBlobFlatSegmentOperationSpec = {
     isXML: true,
     serializer: xmlSerializer$4,
 };
+const listBlobFlatSegmentApacheArrowOperationSpec = {
+    path: "/{containerName}",
+    httpMethod: "GET",
+    responses: {
+        200: {
+            bodyMapper: {
+                type: { name: "Stream" },
+                serializedName: "parsedResponse",
+            },
+            headersMapper: ContainerListBlobFlatSegmentApacheArrowHeaders,
+        },
+        default: {
+            bodyMapper: StorageError,
+            headersMapper: ContainerListBlobFlatSegmentApacheArrowExceptionHeaders,
+        },
+    },
+    queryParameters: [
+        timeoutInSeconds,
+        comp2,
+        prefix,
+        marker,
+        maxPageSize,
+        restype2,
+        include1,
+        startFrom,
+        endBefore,
+    ],
+    urlParameters: [url$1],
+    headerParameters: [
+        version$6,
+        requestId,
+        accept2,
+    ],
+    isXML: true,
+    serializer: xmlSerializer$4,
+};
 const listBlobHierarchySegmentOperationSpec = {
     path: "/{containerName}",
     httpMethod: "GET",
@@ -68261,6 +68505,43 @@ const listBlobHierarchySegmentOperationSpec = {
         version$6,
         requestId,
         accept1,
+    ],
+    isXML: true,
+    serializer: xmlSerializer$4,
+};
+const listBlobHierarchySegmentApacheArrowOperationSpec = {
+    path: "/{containerName}",
+    httpMethod: "GET",
+    responses: {
+        200: {
+            bodyMapper: {
+                type: { name: "Stream" },
+                serializedName: "parsedResponse",
+            },
+            headersMapper: ContainerListBlobHierarchySegmentApacheArrowHeaders,
+        },
+        default: {
+            bodyMapper: StorageError,
+            headersMapper: ContainerListBlobHierarchySegmentApacheArrowExceptionHeaders,
+        },
+    },
+    queryParameters: [
+        timeoutInSeconds,
+        comp2,
+        prefix,
+        marker,
+        maxPageSize,
+        restype2,
+        include1,
+        startFrom,
+        endBefore,
+        delimiter,
+    ],
+    urlParameters: [url$1],
+    headerParameters: [
+        version$6,
+        requestId,
+        accept2,
     ],
     isXML: true,
     serializer: xmlSerializer$4,
@@ -69515,7 +69796,7 @@ const uploadPagesOperationSpec = {
         transactionalContentMD5,
         transactionalContentCrc64,
         contentType1,
-        accept2,
+        accept3,
         pageWrite,
         ifSequenceNumberLessThanOrEqualTo,
         ifSequenceNumberLessThan,
@@ -69919,7 +70200,7 @@ const appendBlockOperationSpec = {
         transactionalContentMD5,
         transactionalContentCrc64,
         contentType1,
-        accept2,
+        accept3,
         structuredContentLength,
         maxSize,
         appendPosition,
@@ -70149,7 +70430,7 @@ const uploadOperationSpec = {
         transactionalContentMD5,
         transactionalContentCrc64,
         contentType1,
-        accept2,
+        accept3,
         structuredContentLength,
         blobType2,
     ],
@@ -70248,7 +70529,7 @@ const stageBlockOperationSpec = {
         transactionalContentMD5,
         transactionalContentCrc64,
         contentType1,
-        accept2,
+        accept3,
         structuredContentLength,
     ],
     isXML: true,
@@ -70409,7 +70690,7 @@ let StorageClient$1 = class StorageClient extends ExtendedServiceClient {
         const defaults = {
             requestContentType: "application/json; charset=utf-8",
         };
-        const packageDetails = `azsdk-js-azure-storage-blob/12.33.0`;
+        const packageDetails = `azsdk-js-azure-storage-blob/12.34.0`;
         const userAgentPrefix = options.userAgentOptions && options.userAgentOptions.userAgentPrefix
             ? `${options.userAgentOptions.userAgentPrefix} ${packageDetails}`
             : `${packageDetails}`;
@@ -70425,7 +70706,7 @@ let StorageClient$1 = class StorageClient extends ExtendedServiceClient {
         // Parameter assignments
         this.url = url;
         // Assigning values to Constant parameters
-        this.version = options.version || "2026-06-06";
+        this.version = options.version || "2026-10-06";
         this.service = new ServiceImpl(this);
         this.container = new ContainerImpl(this);
         this.blob = new BlobImpl(this);
@@ -73620,6 +73901,43 @@ class BlobDownloadResponse {
      */
     get legalHold() {
         return this.originalResponse.legalHold;
+    }
+    /**
+     * The access tier of the blob. Values include premium page-blob tiers and block-blob tiers
+     * such as Hot, Cool, Cold, Archive, and Smart. See
+     * https://learn.microsoft.com/azure/storage/blobs/storage-blob-storage-tiers.
+     *
+     * @readonly
+     */
+    get accessTier() {
+        return this.originalResponse.accessTier;
+    }
+    /**
+     * For page blobs on a premium storage account only. If the access tier is not explicitly set on
+     * the blob, the tier is inferred based on its content length and this header will be returned
+     * with true value.
+     *
+     * @readonly
+     */
+    get accessTierInferred() {
+        return this.originalResponse.accessTierInferred;
+    }
+    /**
+     * The time the tier was changed on the object. This is only returned if the tier on the block
+     * blob was ever set.
+     *
+     * @readonly
+     */
+    get accessTierChangedOn() {
+        return this.originalResponse.accessTierChangedOn;
+    }
+    /**
+     * The underlying tier of a smart tier blob. Only returned if the blob is in Smart tier.
+     *
+     * @readonly
+     */
+    get smartAccessTier() {
+        return this.originalResponse.smartAccessTier;
     }
     get structuredBodyType() {
         return this.originalResponse.structuredBodyType;
