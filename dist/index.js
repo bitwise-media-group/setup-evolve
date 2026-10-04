@@ -110019,13 +110019,12 @@ function requireHttpCacheSemantics () {
 
 	    /**
 	     * @param {{headers: Record<string, string>, synchronous: boolean}|undefined} revalidation - Revalidation information, if any.
-	     * @returns {{response: HttpResponse, revalidation: {headers: Record<string, string>, synchronous: boolean}|undefined}} An object with a cached response headers and revalidation info.
+	     * @returns {{response: {headers: Record<string, string>}, revalidation: {headers: Record<string, string>, synchronous: boolean}|undefined}} An object with a cached response headers and revalidation info.
 	     */
 	    _evaluateRequestHitResult(revalidation) {
 	        return {
 	            response: {
 	                headers: this.responseHeaders(),
-	                status: this._status,
 	            },
 	            revalidation,
 	        };
@@ -110073,9 +110072,9 @@ function requireHttpCacheSemantics () {
 	     * }
 	     * ```
 	     * @param {HttpRequest} req - new incoming HTTP request
-	     * @returns {{response: HttpResponse|undefined, revalidation: {headers: Record<string, string>, synchronous: boolean}|undefined}} An object containing keys:
+	     * @returns {{response: {headers: Record<string, string>}|undefined, revalidation: {headers: Record<string, string>, synchronous: boolean}|undefined}} An object containing keys:
 	     *   - revalidation: { headers: Record<string, string>, synchronous: boolean } Set if you should send this to the origin server
-	     *   - response: HttpResponse Set if you can respond to the client with these cached headers
+	     *   - response: { headers: Record<string, string> } Set if you can respond to the client with these cached headers
 	     */
 	    evaluateRequest(req) {
 	        this._assertRequestHasHeaders(req);
@@ -110170,32 +110169,18 @@ function requireHttpCacheSemantics () {
 	            return true;
 	        }
 
+	        // A Vary header field-value of "*" always fails to match
+	        if (this._resHeaders.vary === '*') {
+	            return false;
+	        }
+
 	        const fields = this._resHeaders.vary
 	            .trim()
 	            .toLowerCase()
 	            .split(/\s*,\s*/);
-
 	        for (const name of fields) {
-	            // A Vary header field-value of "*" always fails to match
-	            if (name === '*') {
-	                return false;
-	            }
-
-	            const newReq = Object.prototype.hasOwnProperty.call(
-	                req.headers,
-	                name
-	            ) && req.headers[name];
-
-	            const cachedReq = Object.prototype.hasOwnProperty.call(
-	                this._reqHeaders,
-	                name
-	            ) && this._reqHeaders[name];
-
-	            if (newReq !== cachedReq) {
-	                return false;
-	            }
+	            if (req.headers[name] !== this._reqHeaders[name]) return false;
 	        }
-
 	        return true;
 	    }
 
@@ -110254,14 +110239,6 @@ function requireHttpCacheSemantics () {
 	        headers.age = `${Math.round(age)}`;
 	        headers.date = new Date(this.now()).toUTCString();
 	        return headers;
-	    }
-
-	    /**
-	     * Returns the status code of the cached response.
-	     * @returns {number} The response status code.
-	     */
-	    status() {
-	      return this._status;
 	    }
 
 	    /**
