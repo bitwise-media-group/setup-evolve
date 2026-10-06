@@ -118,20 +118,22 @@ CI enforces that the committed `dist/` bundle reproduces exactly from `src/`.
 
 ## Development
 
-The lint/build/test contract comes from the shared Makefile library's node-action archetype
-(`bitwise-media-group/make`), consumed as the `make/` submodule — clone with `--recurse-submodules` (or run
-`git submodule update --init`) so the `Makefile`'s `include make/node-action.mk` resolves.
+The lint/build/test contract comes from the shared toolchain's node archetype (`bitwise-media-group/toolchain`),
+consumed as the `.mise/` submodule — clone with `--recurse-submodules` (or run `git submodule update --init`) so the
+root `mise.toml` can load its tasks and pinned tools.
 
 ```sh
-git submodule update --init                             # fetch make/ after a plain clone
+git submodule update --init                             # fetch .mise/ after a plain clone
+mise install                                            # the pinned node + lint tools
 npm ci
-make ci              # the gates CI runs: make lint / build / test
-make pr              # the full pre-commit gate: fmt → lint → build → test
+mise run ci          # the gates CI runs: lint / build / test
+mise run pr          # the full pre-commit gate: fmt → lint → build → test
 npm run all          # the same lint + typecheck + unit tests + build, via npm directly
 RUN_INTEGRATION=1 npx vitest run __tests__/integration  # real crypto, network required
 ```
 
-`make` targets just run the npm scripts under the hood; the reusable CI workflow drives the same `make` gates. `dist/`
-reproducibility from `src/` is verified in CI (`make build`), not at release.
+The mise tasks just run the npm scripts under the hood (`make <task>` forwards to `mise run <task>`); the reusable CI
+workflow drives the same gates. `dist/` reproducibility from `src/` is verified in CI (`mise run build`), not at
+release.
 
 Releases are automated with release-please from Conventional Commits; the `v1` major tag follows the latest release.

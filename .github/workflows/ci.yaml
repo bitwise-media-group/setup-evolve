@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 # Caller for the reusable CI workflow. It owns the push/pull_request triggers; the
-# core work runs in github-workflows/ci.yaml, which runs the canonical mise tasks
-# (lint / build / test) as one job each and sets up the toolchains the repo has
-# (package.json -> node here). The `build` task regenerates dist/ and the
-# reusable workflow fails the run if the committed bundle doesn't reproduce from
-# src/.
+# core work runs in github-workflows/ci.yaml, which installs the mise-pinned
+# toolchain (node from the root mise.toml) and runs `mise run <task>` for each
+# canonical task the repo defines (lint / build / test here) as one job each. The
+# `build` task regenerates dist/ and the reusable workflow fails the run if the
+# committed bundle doesn't reproduce from src/.
 #
 # The integration and e2e matrix jobs are product-specific -- they run this action
 # for real against evolve's published releases -- so they stay here alongside the
