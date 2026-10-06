@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import * as semver from 'semver'
 import { MIN_SUPPORTED_VERSION } from './constants'
 import { getReleaseByTag, listReleases, type Octokit, type Release } from './github'

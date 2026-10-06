@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import { describe, expect, it } from 'vitest'
 import { MIN_SUPPORTED_VERSION } from '../src/constants'
 import type { Octokit } from '../src/github'

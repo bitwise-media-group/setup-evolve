@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import * as fs from 'node:fs/promises'
 import { tmpdir } from 'node:os'

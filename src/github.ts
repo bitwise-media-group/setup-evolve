@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import * as github from '@actions/github'
 import { uncompress } from 'snappyjs'
 import { EVOLVE_OWNER, EVOLVE_REPO, GITHUB_API_VERSION } from './constants'

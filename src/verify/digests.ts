@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 // Parses a GoReleaser checksums.txt: one `<sha256-hex>  <filename>` per line.
 // A leading `*` on the filename (sha256sum binary-mode convention) is ignored.
 export function parseChecksums(content: string): Map<string, string> {

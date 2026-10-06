@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import * as core from '@actions/core'
 import type { InstallResult } from './install'
 import type { SignatureProof } from './verify/sigstore'

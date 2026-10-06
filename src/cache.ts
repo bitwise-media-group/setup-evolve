@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import * as path from 'node:path'
 import * as cache from '@actions/cache'
 import * as core from '@actions/core'

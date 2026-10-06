@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 export type Os = 'linux' | 'darwin' | 'windows'
 export type Arch = 'amd64' | 'arm64'
 

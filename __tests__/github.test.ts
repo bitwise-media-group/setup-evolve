@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { compress } from 'snappyjs'

@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import * as core from '@actions/core'

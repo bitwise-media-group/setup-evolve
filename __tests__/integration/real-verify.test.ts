@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 // Real cryptographic verification against live evolve v0.3.0 release assets.
 // Network-bound and therefore gated: RUN_INTEGRATION=1 npx vitest run
 // Set SIGSTORE_TUF_FORCE_CACHE=1 to verify with the TUF root seeded in the

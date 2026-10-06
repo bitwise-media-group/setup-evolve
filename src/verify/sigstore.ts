@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import { type Bundle, type BundleVerifier, createVerifier, type VerifyOptions } from 'sigstore'
 import {
   CERT_IDENTITY_URI,

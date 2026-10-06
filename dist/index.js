@@ -84069,6 +84069,10 @@ function saveCacheV2(paths_1, key_1, options_1) {
     });
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 const EVOLVE_OWNER = 'bitwise-media-group';
 const EVOLVE_REPO = 'evolve';
 const TOOL_NAME = 'evolve';
@@ -84100,6 +84104,10 @@ const INTOTO_STATEMENT_TYPE = 'https://in-toto.io/Statement/v1';
 // install metadata, so cache restores can be re-verified without API calls.
 const VERIFICATION_DIR = '.setup-evolve';
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 function cacheKey(version, { os, arch }) {
     return `setup-evolve-${CACHE_SCHEMA_VERSION}-${version}-${os}-${arch}`;
 }
@@ -84152,6 +84160,10 @@ async function evictInstall(version, platform) {
     }
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 function errorMessage(error) {
     return error instanceof Error ? error.message : String(error);
 }
@@ -89966,6 +89978,10 @@ function requireSnappyjs () {
 
 var snappyjsExports = requireSnappyjs();
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 function createOctokit(token) {
     return getOctokit(token);
 }
@@ -90056,6 +90072,10 @@ function hasStatusCode(error, status) {
     return (error instanceof Error && 'status' in error && error.status === status);
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 function getInputs() {
     return {
         version: getInput('version') || 'latest',
@@ -90065,6 +90085,10 @@ function getInputs() {
     };
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 // Downloads through the asset API endpoint (works for public and private
 // repos, and authenticated requests avoid shared-runner IP rate limits).
 async function downloadReleaseAsset(asset, token) {
@@ -90091,6 +90115,10 @@ async function sha256File(filePath) {
     return hash.digest('hex');
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 function getPlatform(nodePlatform = process.platform, nodeArch = process.arch) {
     let os;
     switch (nodePlatform) {
@@ -90133,6 +90161,10 @@ function binaryName(os) {
     return os === 'windows' ? 'evolve.exe' : 'evolve';
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 // Parses a GoReleaser checksums.txt: one `<sha256-hex>  <filename>` per line.
 // A leading `*` on the filename (sha256sum binary-mode convention) is ignored.
 function parseChecksums(content) {
@@ -135191,6 +135223,10 @@ function requireDist () {
 
 var distExports = requireDist();
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 // The single verification policy applied to every sigstore bundle this action
 // accepts: certificate chains to the public-good Fulcio, the signing identity
 // is evolve's release workflow on main, and inclusion in Rekor plus a CT log
@@ -135277,6 +135313,10 @@ async function verifySlsaProvenance(bundles, subjectName, subjectDigestHex) {
     throw new Error(`no SLSA provenance attestation verified for ${subjectName}: ${failures.join('; ') || 'none matched'}`);
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 // Fresh-download path: download the archive and verify it (API digest,
 // checksums.txt, SLSA provenance), extract, verify the binary's cosign
 // signature, then install into the runner tool cache with the verification
@@ -135337,6 +135377,10 @@ async function reverifyInstall(installDir, platform) {
     return await verifyCosignBundle(bundleJson, binary);
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 async function writeSummary(version, cacheHit, result) {
     if (!process.env.GITHUB_STEP_SUMMARY)
         return;
@@ -135366,6 +135410,10 @@ async function writeSummary(version, cacheHit, result) {
         .write();
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 // Classifies the version input: "latest", an exact version (with or without a
 // leading "v"), or an npm-semver range. Commas in ranges are treated as AND
 // separators (">=0.1, <1" works); all other semantics are npm semver's, so
@@ -135427,6 +135475,10 @@ async function resolveVersion(octokit, input, preRelease) {
     return { version: best, release };
 }
 
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
 async function run() {
     const inputs = getInputs();
     const platform = getPlatform();

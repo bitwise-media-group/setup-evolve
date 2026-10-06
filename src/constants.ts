@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 export const EVOLVE_OWNER = 'bitwise-media-group'
 export const EVOLVE_REPO = 'evolve'
 export const TOOL_NAME = 'evolve'

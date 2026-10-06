@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import * as core from '@actions/core'
 import * as tc from '@actions/tool-cache'
 import { evictInstall, restoreFromActionsCache, saveToActionsCache, toolDir } from './cache'

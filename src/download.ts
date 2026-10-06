@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 BitWise Media Group Ltd
+ * SPDX-License-Identifier: MIT
+ */
+
 import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import * as fs from 'node:fs/promises'
