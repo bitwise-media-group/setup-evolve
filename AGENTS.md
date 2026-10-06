@@ -30,8 +30,8 @@ formatted, built state. An agent must run `make fmt lint build test` instead of 
 The rebuilt `dist/` matters: this Action ships its bundled output, and CI enforces that the committed `dist/` reproduces
 from `src/` (`make build`). Running `make pr` keeps `dist/` in lockstep with `src/` so that gate stays green.
 
-node is pinned in the root `mise.toml` (locked in `mise.lock`). `.node-version` feeds `actions/setup-node` in the CI
-integration job, so keep it on the same version.
+node is pinned in the root `mise.toml` (locked in `mise.lock`) and nowhere else: the reusable CI job and the CI
+integration job both install it through mise.
 
 `.mise/` is a git submodule. After a fresh clone, run `git submodule update --init` (or clone with
 `--recurse-submodules`), then `mise install`, so the `Makefile`'s `include .mise/archetypes/node/include.mk` resolves.

@@ -9,8 +9,8 @@
 # there are no repo-local tasks — the integration and e2e suites that exercise
 # the published action run in CI, not through the task graph. node is pinned
 # here (the repo's own runtime, bumped by this repo's Renovate workflow) and
-# locked in mise.lock; keep .node-version, which the CI integration job feeds
-# to actions/setup-node, on the same version.
+# locked in mise.lock — the single source for every CI job, the integration
+# job included.
 
 [settings]
 lockfile = true
