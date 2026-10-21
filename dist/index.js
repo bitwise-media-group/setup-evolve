@@ -2926,6 +2926,7 @@ function requireDispatcherBase () {
 	if (hasRequiredDispatcherBase) return dispatcherBase;
 	hasRequiredDispatcherBase = 1;
 
+	const buffer = require$$0$8;
 	const Dispatcher = requireDispatcher();
 	const {
 	  ClientDestroyedError,
@@ -2938,6 +2939,7 @@ function requireDispatcherBase () {
 	const kOnClosed = Symbol('onClosed');
 	const kInterceptedDispatch = Symbol('Intercepted Dispatch');
 	const kWebSocketOptions = Symbol('webSocketOptions');
+	const kEventSourceOptions = Symbol('eventSourceOptions');
 
 	class DispatcherBase extends Dispatcher {
 	  constructor (opts) {
@@ -2948,12 +2950,19 @@ function requireDispatcherBase () {
 	    this[kClosed] = false;
 	    this[kOnClosed] = [];
 	    this[kWebSocketOptions] = opts?.webSocket ?? {};
+	    this[kEventSourceOptions] = opts?.eventSource ?? {};
 	  }
 
 	  get webSocketOptions () {
 	    return {
 	      maxFragments: this[kWebSocketOptions].maxFragments ?? 131072,
 	      maxPayloadSize: this[kWebSocketOptions].maxPayloadSize ?? 128 * 1024 * 1024
+	    }
+	  }
+
+	  get eventSourceOptions () {
+	    return {
+	      maxEventSize: this[kEventSourceOptions].maxEventSize ?? buffer.kStringMaxLength
 	    }
 	  }
 
@@ -9574,8 +9583,6 @@ function requireClientH1 () {
 	  socket[kParser] = new Parser(client, socket, llhttpInstance);
 
 	  addListener(socket, 'error', function (err) {
-	    assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	    const parser = this[kParser];
 
 	    // On Mac OS, we get an ECONNRESET even if there is a full body to be forwarded
@@ -10506,8 +10513,6 @@ function requireClientH2 () {
 	  socket[kHTTP2Session] = session;
 
 	  util.addListener(socket, 'error', function (err) {
-	    assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	    this[kError] = err;
 
 	    this[kClient][kOnError](err);
@@ -10581,8 +10586,6 @@ function requireClientH2 () {
 	}
 
 	function onHttp2SessionError (err) {
-	  assert(err.code !== 'ERR_TLS_CERT_ALTNAME_INVALID');
-
 	  this[kSocket][kError] = err;
 	  this[kClient][kOnError](err);
 	}
@@ -11530,9 +11533,10 @@ function requireClient$3 () {
 	    // h2
 	    maxConcurrentStreams,
 	    allowH2,
-	    webSocket
+	    webSocket,
+	    eventSource
 	  } = {}) {
-	    super({ webSocket });
+	    super({ webSocket, eventSource });
 
 	    if (keepAlive !== undefined) {
 	      throw new InvalidArgumentError('unsupported keepAlive, use pipelining=0 instead')
@@ -12777,7 +12781,7 @@ function requireAgent () {
 	}
 
 	class Agent extends DispatcherBase {
-	  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, ...options } = {}) {
+	  constructor ({ factory = defaultFactory, maxRedirections = 0, connect, tls, ...options } = {}) {
 	    if (typeof factory !== 'function') {
 	      throw new InvalidArgumentError('factory must be a function.')
 	    }
@@ -12796,11 +12800,15 @@ function requireAgent () {
 	      connect = { ...connect };
 	    }
 
+	    if (tls && typeof tls !== 'function') {
+	      tls = { ...tls };
+	    }
+
 	    this[kInterceptors] = options.interceptors?.Agent && Array.isArray(options.interceptors.Agent)
 	      ? options.interceptors.Agent
 	      : [createRedirectInterceptor({ maxRedirections })];
 
-	    this[kOptions] = { ...util.deepClone(options), connect };
+	    this[kOptions] = { ...util.deepClone(options), connect, tls };
 	    this[kOptions].interceptors = options.interceptors
 	      ? { ...options.interceptors }
 	      : undefined;
@@ -21343,8 +21351,10 @@ function requireFetch$2 () {
 	  // 19. Run these steps in parallel:
 
 	  //    1. Run these steps, but abort when fetchParams is canceled:
-	  fetchParams.controller.onAborted = onAborted;
-	  fetchParams.controller.on('terminated', onAborted);
+	  if (!fetchParams.controller.resume) {
+	    fetchParams.controller.on('terminated', onAborted);
+	  }
+
 	  fetchParams.controller.resume = async () => {
 	    // 1. While true
 	    while (true) {
@@ -21513,8 +21523,6 @@ function requireFetch$2 () {
 	          }
 	          location = headersList.get('location', true);
 
-	          this.body = new Readable({ read: resume });
-
 	          const decoders = [];
 
 	          const willFollow = location && request.redirect === 'follow' &&
@@ -21532,7 +21540,7 @@ function requireFetch$2 () {
 	            // CVE fix similar to urllib3 (GHSA-gm62-xv2j-4w53) and curl (CVE-2022-32206).
 	            const maxContentEncodings = 5;
 	            if (codings.length > maxContentEncodings) {
-	              reject(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
+	              this.abort(new Error(`too many content-encodings in response: ${codings.length}, maximum allowed is ${maxContentEncodings}`));
 	              return true
 	            }
 
@@ -21564,6 +21572,8 @@ function requireFetch$2 () {
 	              }
 	            }
 	          }
+
+	          this.body = new Readable({ read: resume });
 
 	          const onError = this.onError.bind(this);
 
@@ -21609,10 +21619,6 @@ function requireFetch$2 () {
 	        onComplete () {
 	          if (this.abort) {
 	            fetchParams.controller.off('terminated', this.abort);
-	          }
-
-	          if (fetchParams.controller.onAborted) {
-	            fetchParams.controller.off('terminated', fetchParams.controller.onAborted);
 	          }
 
 	          fetchParams.controller.ended = true;
@@ -26412,6 +26418,20 @@ function requireReceiver () {
 	        if (isControlFrame(this.#info.opcode)) {
 	          this.#loop = this.parseControlFrame(body);
 	          this.#state = parserStates.INFO;
+
+	          // If the automatic PONG/CLOSE reply filled the socket's write buffer,
+	          // stop parsing and resume on drain so a PING flood cannot grow the
+	          // outbound queue without bound.
+	          const socket = this.ws[kResponse].socket;
+	          if (this.#loop && socket.writableNeedDrain) {
+	            this.#loop = false;
+	            socket.once('drain', () => {
+	              if (this.destroyed) return
+	              this.#loop = true;
+	              this.run(callback);
+	            });
+	            return
+	          }
 	        } else {
 	          if (!this.#info.compressed) {
 	            if (!this.writeFragments(body)) {
@@ -27443,6 +27463,7 @@ var hasRequiredEventsourceStream;
 function requireEventsourceStream () {
 	if (hasRequiredEventsourceStream) return eventsourceStream;
 	hasRequiredEventsourceStream = 1;
+	const buffer = require$$0$8;
 	const { Transform } = require$$0$b;
 	const { isASCIINumber, isValidLastEventId } = requireUtil$2();
 
@@ -27467,10 +27488,18 @@ function requireEventsourceStream () {
 	 */
 	const SPACE = 0x20;
 
+	const defaultMaxEventSize = buffer.kStringMaxLength;
+
 	const DATA = Buffer.from('data');
 	const EVENT = Buffer.from('event');
 	const ID = Buffer.from('id');
 	const RETRY = Buffer.from('retry');
+
+	// Each data field creates a string node, and each unconsumed input chunk keeps
+	// a Buffer wrapper. The absolute ceiling protects the large default byte limit.
+	const minParserItems = 1024;
+	const maxParserItems = 131072;
+	const bytesPerParserItem = 128;
 
 	function isASCIINumberBytes (buffer, start) {
 	  if (start >= buffer.length) {
@@ -27508,6 +27537,12 @@ function requireEventsourceStream () {
 	  }
 
 	  return true
+	}
+
+	function createMaxEventSizeExceededError () {
+	  const error = new Error('EventSource message size exceeded');
+	  error.aborted = false;
+	  return error
 	}
 
 	/**
@@ -27558,6 +27593,13 @@ function requireEventsourceStream () {
 	  pos = 0
 	  lineChunkIndex = 0
 	  linePos = 0
+	  lineLength = 0
+	  eventSize = 0
+	  eventFieldSizes = { data: 0, event: 0, id: 0, retry: 0 }
+	  dataLineCount = 0
+	  maxEventSize
+	  maxDataLines
+	  maxBufferedChunks
 
 	  event = {
 	    data: undefined,
@@ -27568,6 +27610,7 @@ function requireEventsourceStream () {
 
 	  /**
 	   * @param {object} options
+	   * @param {number} [options.maxEventSize]
 	   * @param {eventSourceSettings} options.eventSourceSettings
 	   * @param {Function} [options.push]
 	   */
@@ -27579,6 +27622,12 @@ function requireEventsourceStream () {
 	    super(options);
 
 	    this.state = options.eventSourceSettings || {};
+	    this.maxEventSize = options.maxEventSize ?? defaultMaxEventSize;
+	    const parserItemLimit = this.maxEventSize > 0
+	      ? Math.min(maxParserItems, Math.max(minParserItems, Math.floor(this.maxEventSize / bytesPerParserItem)))
+	      : 0;
+	    this.maxDataLines = parserItemLimit;
+	    this.maxBufferedChunks = parserItemLimit;
 	    if (options.push) {
 	      this.push = options.push;
 	    }
@@ -27596,6 +27645,14 @@ function requireEventsourceStream () {
 	      return
 	    }
 
+	    // A leading line ending can immediately release the currently buffered
+	    // line, even when it uses the final allowed chunk slot.
+	    if (this.maxEventSize > 0 &&
+	        this.chunks.length >= this.maxBufferedChunks &&
+	        chunk[0] !== LF && chunk[0] !== CR) {
+	      callback(createMaxEventSizeExceededError());
+	      return
+	    }
 	    this.chunks.push(chunk);
 
 	    // Strip leading byte-order-mark if we opened the stream and started
@@ -27674,7 +27731,12 @@ function requireEventsourceStream () {
 
 	        // In any case, we can process the line as we reached an
 	        // end-of-line character
-	        this.parseLine(this.readLine(), this.event);
+	        try {
+	          this.parseLine(this.readLine(), this.event);
+	        } catch (error) {
+	          callback(error);
+	          return
+	        }
 	        this.consumeCurrentByte();
 	        // A line was processed and this could be the end of the event. We need
 	        // to check if the next line is empty to determine if the event is
@@ -27683,15 +27745,28 @@ function requireEventsourceStream () {
 	        continue
 	      }
 
+	      // readLine() is only called after CR or LF. Reject an unfinished line
+	      // before it can retain an unbounded number of decoded chunks. The seven
+	      // extra bytes allow the longest field prefix ("event: " or "retry: ").
+	      if (this.maxEventSize > 0 && ++this.lineLength > this.maxEventSize + 7) {
+	        callback(createMaxEventSizeExceededError());
+	        return
+	      }
 	      this.advanceCursor();
 	    }
 
 	    callback();
 	  }
 
+	  _destroy (error, callback) {
+	    this.chunks.length = 0;
+	    this.clearEvent();
+	    super._destroy(error, callback);
+	  }
+
 	  /**
 	   * @param {Buffer} line
-	   * @param {EventStreamEvent} event
+	   * @param {EventSourceStreamEvent} event
 	   */
 	  parseLine (line, event) {
 	    // If the line is empty (a blank line)
@@ -27725,6 +27800,13 @@ function requireEventsourceStream () {
 	    }
 
 	    if (isFieldName(line, fieldLength, DATA)) {
+	      if (this.maxEventSize > 0 && this.dataLineCount >= this.maxDataLines) {
+	        throw createMaxEventSizeExceededError()
+	      }
+	      const valueBytes = line.length - valueStart;
+	      const dataSize = this.eventFieldSizes.data + (event.data === undefined ? 0 : 1) + valueBytes;
+	      this.setEventFieldSize('data', dataSize);
+
 	      const value = line.toString('utf8', valueStart);
 
 	      if (event.data === undefined) {
@@ -27732,11 +27814,13 @@ function requireEventsourceStream () {
 	      } else {
 	        event.data += `\n${value}`;
 	      }
+	      this.dataLineCount++;
 	      return
 	    }
 
 	    if (isFieldName(line, fieldLength, RETRY)) {
 	      if (isASCIINumberBytes(line, valueStart)) {
+	        this.setEventFieldSize('retry', line.length - valueStart);
 	        event.retry = line.toString('utf8', valueStart);
 	      }
 	      return
@@ -27744,18 +27828,27 @@ function requireEventsourceStream () {
 
 	    if (isFieldName(line, fieldLength, ID)) {
 	      if (isValidLastEventIdBytes(line, valueStart)) {
+	        this.setEventFieldSize('id', line.length - valueStart);
 	        event.id = line.toString('utf8', valueStart);
 	      }
 	      return
 	    }
 
 	    if (isFieldName(line, fieldLength, EVENT)) {
-	      const value = line.toString('utf8', valueStart);
-
-	      if (value.length > 0) {
-	        event.event = value;
+	      if (valueStart < line.length) {
+	        this.setEventFieldSize('event', line.length - valueStart);
+	        event.event = line.toString('utf8', valueStart);
 	      }
 	    }
+	  }
+
+	  setEventFieldSize (field, size) {
+	    const eventSize = this.eventSize - this.eventFieldSizes[field] + size;
+	    if (this.maxEventSize > 0 && eventSize > this.maxEventSize) {
+	      throw createMaxEventSizeExceededError()
+	    }
+	    this.eventSize = eventSize;
+	    this.eventFieldSizes[field] = size;
 	  }
 
 	  /**
@@ -27788,6 +27881,12 @@ function requireEventsourceStream () {
 	    this.event.event = undefined;
 	    this.event.id = undefined;
 	    this.event.retry = undefined;
+	    this.eventSize = 0;
+	    this.dataLineCount = 0;
+	    this.eventFieldSizes.data = 0;
+	    this.eventFieldSizes.event = 0;
+	    this.eventFieldSizes.id = 0;
+	    this.eventFieldSizes.retry = 0;
 	  }
 
 	  hasPendingEvent () {
@@ -27823,14 +27922,16 @@ function requireEventsourceStream () {
 	  syncLineStartToCursor () {
 	    this.lineChunkIndex = this.chunkIndex;
 	    this.linePos = this.pos;
+	    this.lineLength = 0;
 	    this.dropConsumedChunks();
 	  }
 
 	  dropConsumedChunks () {
-	    while (this.lineChunkIndex > 0) {
-	      this.chunks.shift();
-	      this.lineChunkIndex--;
-	      this.chunkIndex--;
+	    if (this.lineChunkIndex > 0) {
+	      const consumed = this.lineChunkIndex;
+	      this.chunks.splice(0, consumed);
+	      this.lineChunkIndex = 0;
+	      this.chunkIndex -= consumed;
 	    }
 
 	    if (this.chunkIndex === this.chunks.length) {
@@ -27956,6 +28057,7 @@ function requireEventsource () {
 	const { delay } = requireUtil$2();
 	const { kEnumerableProperty } = requireUtil$9();
 	const { environmentSettingsObject } = requireUtil$8();
+	const { getGlobalDispatcher } = requireGlobal();
 
 	let experimentalWarned = false;
 
@@ -28237,6 +28339,7 @@ function requireEventsource () {
 
 	      const eventSourceStream = new EventSourceStream({
 	        eventSourceSettings: this.#state,
+	        maxEventSize: this.#dispatcher.eventSourceOptions?.maxEventSize,
 	        push: (event) => {
 	          this.dispatchEvent(createFastMessageEvent(
 	            event.type,
@@ -28415,7 +28518,8 @@ function requireEventsource () {
 	  },
 	  {
 	    key: 'dispatcher', // undici only
-	    converter: webidl.converters.any
+	    converter: webidl.converters.any,
+	    defaultValue: () => getGlobalDispatcher()
 	  }
 	]);
 
@@ -48314,8 +48418,10 @@ function toNumber(str, options = {}) {
         return parse_int(trimmedStr, 2);
     } else if (options.octal && octRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 8);
-    } else if (!isFinite(trimmedStr)) { //Infinity
-        return handleInfinity(str, Number(trimmedStr), options);
+    } else if (!isFinite(trimmedStr)) { //Infinity or not a number
+        const num = Number(trimmedStr);
+        if (Number.isNaN(num)) return str; //not a number: always the original string
+        return handleInfinity(str, num, options); //only +/-Infinity reaches here
     } else if (trimmedStr.includes('e') || trimmedStr.includes('E')) { //eNotation
         return resolveEnotation(str, trimmedStr, options);
     } else {
@@ -48327,8 +48433,8 @@ function toNumber(str, options = {}) {
             const leadingZeros = match[2];
             let numTrimmedByZeros = trimZeros(match[3]); //complete num without leading zeros
             const decimalAdjacentToLeadingZeros = sign ? // 0., -00., 000.
-                str[leadingZeros.length + 1] === "."
-                : str[leadingZeros.length] === ".";
+                trimmedStr[leadingZeros.length + 1] === "."
+                : trimmedStr[leadingZeros.length] === ".";
 
             //trim ending zeros for floating number
             if (!options.leadingZeros //leading zeros are not allowed
@@ -48376,8 +48482,8 @@ function resolveEnotation(str, trimmedStr, options) {
         const eChar = notation[3].indexOf("e") === -1 ? "E" : "e";
         const leadingZeros = notation[2];
         const eAdjacentToLeadingZeros = sign ? // 0E.
-            str[leadingZeros.length + 1] === eChar
-            : str[leadingZeros.length] === eChar;
+            trimmedStr[leadingZeros.length + 1] === eChar
+            : trimmedStr[leadingZeros.length] === eChar;
 
         if (leadingZeros.length > 1 && eAdjacentToLeadingZeros) return str;
         else if (leadingZeros.length === 1
@@ -48386,8 +48492,7 @@ function resolveEnotation(str, trimmedStr, options) {
         } else if (leadingZeros.length > 0) {
             // Has leading zeros — only accept if leadingZeros option allows it
             if (options.leadingZeros && !eAdjacentToLeadingZeros) {
-                trimmedStr = (notation[1] || "") + notation[3];
-                return Number(trimmedStr);
+                return Number(trimmedStr); // Number() accepts leading zeros; stripping can leave a mantissa-less ".e0"
             } else return str;
         } else {
             // No leading zeros — always valid e-notation, parse it
@@ -120883,6 +120988,9 @@ function requireConstants () {
 	 * A regular expression that matches an IPv6 zone
 	 * @memberof Address6
 	 * @static
+	 * @deprecated Takes quadratic time on input holding many `%` characters
+	 * followed by a line terminator. The library finds the zone by index, as
+	 * `Address6`'s constructor shows, and 11.0.0 removes this export.
 	 */
 	constants.RE_ZONE_STRING = /%.*$/;
 	constants.RE_URL = /^(?:\[([0-9a-f:.]+)\]|([0-9a-f:.]+))(?:[/?#].*)?$/i;
@@ -121243,10 +121351,13 @@ function requireIpv6 () {
 	        if (/\//.test(address)) {
 	            throw new address_error_1.AddressError('Invalid subnet mask.');
 	        }
-	        const zone = constants6.RE_ZONE_STRING.exec(address);
-	        if (zone) {
-	            this.zone = zone[0];
-	            address = address.replace(constants6.RE_ZONE_STRING, '');
+	        // A zone runs from the first `%` to the end of the input and holds no line
+	        // terminator. Finding it by index reads the input once, where matching
+	        // RE_ZONE_STRING retries from every `%` that a line terminator disqualifies.
+	        const zoneStart = address.indexOf('%');
+	        if (zoneStart !== -1 && /^.*$/.test(address.slice(zoneStart))) {
+	            this.zone = address.slice(zoneStart);
+	            address = address.slice(0, zoneStart);
 	        }
 	        // The longest well-formed address is all but the last two groups written
 	        // as four hex digits with their colons, then a 15-character dotted quad:
@@ -135539,7 +135650,12 @@ run().catch((err) => {
     setFailed(errorMessage(err));
 });
 
-async function pMap(
+function pMap(iterable, mapper, options) {
+	return mapConcurrently(iterable, mapper, options, false);
+}
+
+// The engine behind all the functions, except `pMapIterable`. With `isSettled`, an element or a mapper that rejects gives a `{status: 'rejected'}` result instead of an error, like `Promise.allSettled`, so `stopOnError` does not apply.
+async function mapConcurrently(
 	iterable,
 	mapper,
 	{
@@ -135547,29 +135663,21 @@ async function pMap(
 		stopOnError = true,
 		signal,
 	} = {},
+	isSettled,
 ) {
 	return new Promise((resolve_, reject_) => {
-		if (iterable[Symbol.iterator] === undefined && iterable[Symbol.asyncIterator] === undefined) {
-			throw new TypeError(`Expected \`input\` to be either an \`Iterable\` or \`AsyncIterable\`, got (${typeof iterable})`);
-		}
-
-		if (typeof mapper !== 'function') {
-			throw new TypeError('Mapper function is required');
-		}
-
-		if (!((Number.isSafeInteger(concurrency) && concurrency >= 1) || concurrency === Number.POSITIVE_INFINITY)) {
-			throw new TypeError(`Expected \`concurrency\` to be an integer from 1 and up or \`Infinity\`, got \`${concurrency}\` (${typeof concurrency})`);
-		}
+		validateOptions(iterable, mapper, concurrency);
 
 		const result = [];
+		// Stage the errors by index, like `result`, so they are reported in input order.
 		const errors = [];
-		const skippedIndexesMap = new Map();
-		let isRejected = false;
+		let skippedCount = 0;
 		let isResolved = false;
 		let isIterableDone = false;
-		let resolvingCount = 0;
+		const pendingIndexes = new Set();
+		let doneIndex = Number.POSITIVE_INFINITY;
 		let currentIndex = 0;
-		const iterator = iterable[Symbol.asyncIterator] === undefined ? iterable[Symbol.iterator]() : iterable[Symbol.asyncIterator]();
+		const iterator = getIterator(iterable);
 
 		const signalListener = () => {
 			reject(signal.reason);
@@ -135589,7 +135697,6 @@ async function pMap(
 				return;
 			}
 
-			isRejected = true;
 			isResolved = true;
 			reject_(reason);
 			cleanup();
@@ -135608,85 +135715,131 @@ async function pMap(
 			signal.addEventListener('abort', signalListener, {once: true});
 		}
 
-		const next = async () => {
-			if (isResolved) {
+		const pull = createPuller(iterator);
+
+		// Settle only once the source is done, or a mapper stopped, and every earlier pull and mapper has finished. A pull before the `done` or the stop can still produce an element, while pulls after it do not affect the result.
+		const settleIfFinished = () => {
+			if (isResolved || doneIndex === Number.POSITIVE_INFINITY) {
 				return;
 			}
 
-			// Once the source reported `done`, don't pull again like `for await`. A source like a queue may block in `next()` after it is exhausted, which would hang the completion below.
-			const nextItem = isIterableDone ? {done: true} : await iterator.next();
+			for (const index of pendingIndexes) {
+				if (index < doneIndex) {
+					return;
+				}
+			}
 
-			const index = currentIndex;
-			currentIndex++;
+			if (!stopOnError) {
+				const collectedErrors = [];
 
-			// Note: `iterator.next()` can be called many times in parallel.
-			// This can cause multiple calls to this `next()` function to
-			// receive a `nextItem` with `done === true`.
-			// The shutdown logic that rejects/resolves must be protected
-			// so it runs only one time as the `skippedIndex` logic is
-			// non-idempotent.
-			if (nextItem.done) {
-				isIterableDone = true;
-
-				if (resolvingCount === 0 && !isResolved) {
-					if (!stopOnError && errors.length > 0) {
-						reject(new AggregateError(errors)); // eslint-disable-line unicorn/error-message
-						return;
+				for (let index = 0; index < Math.min(doneIndex, errors.length); index++) {
+					if (index in errors) {
+						collectedErrors.push(errors[index]);
 					}
-
-					isResolved = true;
-
-					if (skippedIndexesMap.size === 0) {
-						resolve(result);
-						return;
-					}
-
-					const pureResult = [];
-
-					// Support multiple `pMapSkip`'s.
-					for (const [index, value] of result.entries()) {
-						if (skippedIndexesMap.get(index) === pMapSkip) {
-							continue;
-						}
-
-						pureResult.push(value);
-					}
-
-					resolve(pureResult);
 				}
 
+				if (collectedErrors.length > 0) {
+					reject(new AggregateError(collectedErrors)); // eslint-disable-line unicorn/error-message
+					return;
+				}
+			}
+
+			isResolved = true;
+
+			// A stop ended the result before the source did, so close it, like `for await` does on a `break`. Not at the stop itself, as a source that settles its `next()` calls out of call order may still owe an earlier element, and closing could drop it.
+			if (!isIterableDone) {
+				closeIterator(iterator);
+			}
+
+			// `done` is final, like `for await`, so a `done` that lands between two elements ends
+			// the result there and everything the source produced past it is dropped. A stop cuts it the same way.
+			const lastIndex = Math.min(doneIndex, result.length);
+
+			// Every index below `lastIndex` has a value: an index only goes unassigned when its pull reported `done` or its mapper returned `pMapStop`, and the lowest such index is `doneIndex`. So the array is dense below `lastIndex`, and the fast path can hand it over untouched.
+			if (lastIndex === result.length && skippedCount === 0) {
+				resolve(result);
 				return;
 			}
 
-			resolvingCount++;
+			// Otherwise this drops the skipped results and whatever the `done` or the stop cut off.
+			resolve(result.slice(0, lastIndex).filter(value => value !== pMapSkip));
+		};
+
+		const next = async () => {
+			// After a `done` or a stop, a pull would take an item nobody is going to map, which a one-shot source, like a queue, would lose.
+			if (isResolved || currentIndex >= doneIndex) {
+				return;
+			}
+
+			// Take the index when the pull starts, not when it resolves, so a source that settles
+			// its `next()` calls out of call order still gets the right position.
+			const index = currentIndex++;
+			pendingIndexes.add(index);
+
+			let nextItem;
+			try {
+				nextItem = await pull();
+			} catch (error) {
+				pendingIndexes.delete(index);
+
+				if (index < doneIndex) {
+					throw error;
+				}
+
+				settleIfFinished();
+				return;
+			}
+
+			if (nextItem.done) {
+				pendingIndexes.delete(index);
+				doneIndex = Math.min(doneIndex, index);
+				isIterableDone = true;
+				settleIfFinished();
+				return;
+			}
 
 			// Intentionally detached
-			(async () => {
+			const runner = (async () => {
 				try {
 					const element = await nextItem.value;
 
-					if (isResolved) {
+					if (isResolved || index >= doneIndex) {
 						return;
 					}
 
 					const value = await mapper(element, index);
 
-					// Use Map to stage the index of the element.
-					if (value === pMapSkip) {
-						skippedIndexesMap.set(index, value);
-					}
-
-					result[index] = value;
-				} catch (error) {
-					if (stopOnError) {
-						reject(error);
+					// Ignore an item produced after an earlier pull reported `done` or an earlier mapper returned `pMapStop`.
+					if (index >= doneIndex) {
 						return;
 					}
 
-					errors.push(error);
-				}
+					// A stop ends the result here, like a `done` from the source, so settling waits only for the earlier elements.
+					if (value === pMapStop) {
+						doneIndex = index;
+						return;
+					}
 
-				resolvingCount--;
+					if (value === pMapSkip) {
+						skippedCount++;
+					}
+
+					result[index] = isSettled && value !== pMapSkip ? {status: 'fulfilled', value} : value;
+				} catch (error) {
+					if (index >= doneIndex) {
+						return;
+					}
+
+					if (stopOnError) {
+						reject(error);
+						return;
+					} else {
+						errors[index] = error;
+					}
+				} finally {
+					pendingIndexes.delete(index);
+					settleIfFinished();
+				}
 
 				// If the iterable throws we can't really continue regardless of `stopOnError` state
 				// since an iterable is likely to continue throwing after it throws once.
@@ -135698,12 +135851,15 @@ async function pMap(
 					reject(error);
 				}
 			})();
+
+			// Link the runner to the returned promise, so the async stack trace of a mapper error reaches the caller. Nothing awaits the runner, so the trace would stop there, but V8 follows a reaction that resolves another promise. The link never settles, so it never resolves the returned promise. It is a new promise for each runner, as a shared one would keep a reaction for every element.
+			runner.then(() => new Promise(() => {})).then(resolve_);
 		};
 
 		// Create the concurrent runners in a detached (non-awaited)
 		// promise. We need this so we can await the `next()` calls
 		// to stop creating runners before hitting the concurrency limit
-		// if the iterable has already been marked as done.
+		// if the iterable has already been marked as done or a mapper stopped.
 		// NOTE: We *must* do this for async iterators otherwise we'll spin up
 		// infinite `next()` calls by default and never start the event loop.
 		(async () => {
@@ -135716,7 +135872,7 @@ async function pMap(
 					break;
 				}
 
-				if (isIterableDone || isRejected) {
+				if (isResolved || currentIndex >= doneIndex) {
 					break;
 				}
 			}
@@ -135726,6 +135882,36 @@ async function pMap(
 
 const pMapSkip = Symbol('skip');
 
+const pMapStop = Symbol('stop');
+
+// The checks `pMap` and `pMapIterable` share, so both reject the same input the same way.
+// `mapConcurrently` runs this inside its promise, so a bad argument rejects rather than throws.
+function validateOptions(iterable, mapper, concurrency) {
+	// Optional chaining, so a nullish input gets this message rather than Node's internal
+	// "null is not iterable".
+	if (iterable?.[Symbol.iterator] === undefined && iterable?.[Symbol.asyncIterator] === undefined) {
+		throw new TypeError(`Expected \`input\` to be either an \`Iterable\` or \`AsyncIterable\`, got (${typeof iterable})`);
+	}
+
+	if (typeof mapper !== 'function') {
+		throw new TypeError('Mapper function is required');
+	}
+
+	if (!isLimit(concurrency, 1)) {
+		throw new TypeError(`Expected \`concurrency\` to be an integer from 1 and up or \`Infinity\`, got \`${concurrency}\` (${typeof concurrency})`);
+	}
+}
+
+// Whether the value is an integer from `minimum` and up, or `Infinity`, as `concurrency` and `backpressure` must be.
+function isLimit(value, minimum) {
+	return (Number.isSafeInteger(value) && value >= minimum) || value === Number.POSITIVE_INFINITY;
+}
+
+// Take the async iterator when the input has both, like `for await` does.
+function getIterator(iterable) {
+	return iterable[Symbol.asyncIterator] === undefined ? iterable[Symbol.iterator]() : iterable[Symbol.asyncIterator]();
+}
+
 // Close the source so it can release its resources, like `for await` does.
 // Callers must not await this so a source that is blocked in `next()` cannot block them.
 async function closeIterator(iterator) {
@@ -135734,10 +135920,52 @@ async function closeIterator(iterator) {
 	} catch {}
 }
 
+// Pull the next item, and stop pulling once the source has reported `done`: a source like a queue
+// may block in `next()` after it is exhausted, which would hang the caller. `done` is final, like
+// `for await`, so anything the source produces after it is dropped.
+function createPuller(iterator) {
+	let isSourceDone = false;
+
+	// A sync iterable, like an array, answers right away, so `done` can be seen here. An async
+	// iterable is seen in the `then` below, as soon as its pull settles.
+	const markDone = item => {
+		if (item?.done) {
+			isSourceDone = true;
+		}
+	};
+
+	return () => {
+		if (isSourceDone) {
+			return {done: true};
+		}
+
+		const result = iterator.next();
+		markDone(result);
+
+		// A sync iterable, like an array, answers right away, so `done` has been read already and
+		// the result can go back untouched.
+		if (typeof result?.then !== 'function') {
+			return result;
+		}
+
+		// An async iterable settles later, so `done` is read off the pull once it does. That is a
+		// branch of its own, which leaves the caller awaiting the pull itself rather than a promise
+		// derived from it, so an async source does not pay an extra microtask per element. The
+		// rejection is handled here as well as by the caller, so a pull cannot escape as an
+		// unhandled rejection. A thenable that is not a promise is turned into one first, so it is
+		// subscribed to once, like `for await` does, while a native promise is returned as is.
+		const promise = Promise.resolve(result);
+		promise.then(markDone, () => {});
+
+		return promise;
+	};
+}
+
 var index = /*#__PURE__*/Object.freeze({
     __proto__: null,
     default: pMap,
-    pMapSkip: pMapSkip
+    pMapSkip: pMapSkip,
+    pMapStop: pMapStop
 });
 
 export { run };
