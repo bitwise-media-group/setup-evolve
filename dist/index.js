@@ -131636,6 +131636,9 @@ function requireDelegations () {
 	        }
 	        roleMap = data.reduce((acc, role) => {
 	            const delegatedRole = role_1.DelegatedRole.fromJSON(role);
+	            if (Object.hasOwn(acc, delegatedRole.name)) {
+	                throw new error_1.ValueError(`duplicate delegated role: ${delegatedRole.name}`);
+	            }
 	            return {
 	                ...acc,
 	                [delegatedRole.name]: delegatedRole,
@@ -132255,7 +132258,7 @@ function requireFetcher () {
 
 var updater = {};
 
-var version$1 = "6.0.1";
+var version$1 = "6.0.2";
 var require$$4$1 = {
 	version: version$1};
 
