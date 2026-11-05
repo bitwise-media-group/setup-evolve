@@ -26,7 +26,7 @@ inputs:
       stable releases for "latest" and range matching. An exact prerelease
       version (for example "0.2.0-rc.1") installs regardless of this flag.
     required: false
-    default: 'false'
+    default: "false"
   github-token:
     description: >-
       Token used to query the GitHub API (release listing, asset download,
@@ -39,7 +39,7 @@ inputs:
       with the GitHub Actions cache. The runner tool cache is always used.
       Cached installations are cryptographically re-verified on restore.
     required: false
-    default: 'true'
+    default: "true"
 
 outputs:
   version:
