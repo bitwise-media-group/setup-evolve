@@ -4,7 +4,7 @@
  */
 
 // Real cryptographic verification against live evolve v0.3.0 release assets.
-// Network-bound and therefore gated: RUN_INTEGRATION=1 npx vitest run
+// Network-bound and therefore gated: RUN_INTEGRATION=1 bun test __tests__/integration
 // Set SIGSTORE_TUF_FORCE_CACHE=1 to verify with the TUF root seeded in the
 // sigstore package instead of refreshing from tuf-repo-cdn.sigstore.dev
 // (useful on egress-restricted machines).
@@ -13,7 +13,7 @@ import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { type Bundle, createVerifier, type VerifyOptions } from 'sigstore'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'bun:test'
 import { SLSA_PREDICATE_TYPE } from '../../src/constants'
 import { createOctokit, fetchAttestations } from '../../src/github'
 import { parseChecksums } from '../../src/verify/digests'

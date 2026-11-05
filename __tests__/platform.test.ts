@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { describe, expect, it } from 'vitest'
-import { archiveName, binaryName, bundleName, getPlatform } from '../src/platform'
+import { describe, expect, it } from 'bun:test'
+import { archiveName, binaryName, bundleName, getPlatform, type Platform } from '../src/platform'
 
 describe('getPlatform', () => {
-  it.each([
+  it.each<[string, string, Platform]>([
     ['linux', 'x64', { os: 'linux', arch: 'amd64' }],
     ['linux', 'arm64', { os: 'linux', arch: 'arm64' }],
     ['darwin', 'x64', { os: 'darwin', arch: 'amd64' }],

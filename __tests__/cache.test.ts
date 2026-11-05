@@ -6,15 +6,15 @@
 import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 
-const restoreCacheMock = vi.fn()
-const saveCacheMock = vi.fn()
-const isFeatureAvailableMock = vi.fn(() => true)
+const restoreCacheMock = mock()
+const saveCacheMock = mock()
+const isFeatureAvailableMock = mock(() => true)
 
 class ReserveCacheError extends Error {}
 
-vi.mock('@actions/cache', () => ({
+mock.module('@actions/cache', () => ({
   restoreCache: restoreCacheMock,
   saveCache: saveCacheMock,
   isFeatureAvailable: isFeatureAvailableMock,

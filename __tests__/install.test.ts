@@ -7,53 +7,51 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import * as fs from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { Octokit, Release, ReleaseAsset } from '../src/github'
 import type { Platform } from '../src/platform'
 
 // Mocks for everything around the extract→read→verify step. The real
 // node:fs/promises and node:path are left intact so the actual binary read
 // runs against a real temp directory — that read is the behaviour under test.
-const downloadReleaseAsset = vi.fn<(asset: ReleaseAsset, token: string) => Promise<string>>()
-const extractArchive = vi.fn<() => Promise<string>>()
-const sha256File = vi.fn(async () => 'a'.repeat(64))
-const findAsset = vi.fn(
-  (_release: Release, name: string): ReleaseAsset => ({
-    name,
-    url: `https://api.github.com/assets/${name}`,
-    digest: 'sha256:apidigest',
-  }),
-)
-const fetchAttestations = vi.fn(async () => [] as unknown[])
-const assertApiDigest = vi.fn()
-const assertChecksum = vi.fn()
-const parseChecksums = vi.fn(() => new Map<string, string>())
-const verifyCosignBundle = vi.fn(async (_bundleJson: unknown, _binary: Buffer) => ({
+const downloadReleaseAsset = mock<(asset: ReleaseAsset, token: string) => Promise<string>>()
+const extractArchive = mock<() => Promise<string>>()
+const sha256File = mock(async () => 'a'.repeat(64))
+const findAsset = mock((_release: Release, name: string): ReleaseAsset => ({
+  name,
+  url: `https://api.github.com/assets/${name}`,
+  digest: 'sha256:apidigest',
+}))
+const fetchAttestations = mock(async () => [] as unknown[])
+const assertApiDigest = mock()
+const assertChecksum = mock()
+const parseChecksums = mock(() => new Map<string, string>())
+const verifyCosignBundle = mock(async (_bundleJson: unknown, _binary: Buffer) => ({
   subjectAlternativeName: 'signer',
   rekorLogIndex: '1',
 }))
-const verifySlsaProvenance = vi.fn(async () => ({
+const verifySlsaProvenance = mock(async () => ({
   subjectAlternativeName: 'signer',
   rekorLogIndex: '1',
   workflowRepository: 'https://github.com/bitwise-media-group/evolve',
   workflowPath: '.github/workflows/release.yaml',
 }))
-const cacheDir = vi.fn(async () => '/opt/hostedtoolcache/evolve/0.1.0/amd64')
+const cacheDir = mock(async () => '/opt/hostedtoolcache/evolve/0.1.0/amd64')
 
 // Keep every fs operation real (they run against the temp dir) but wrap
 // access() so the test can assert the removed check-then-use probe never runs.
-vi.mock('node:fs/promises', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:fs/promises')>()
-  const access = vi.fn(actual.access)
-  return { ...actual, access, default: { ...actual, access } }
-})
+// The real exports are copied out first: once mocked, the live bindings of
+// node:fs/promises (including the `fs` namespace imported above) point at the mock.
+const actualFs = { ...(await import('node:fs/promises')) }
+const access = mock(actualFs.access)
+mock.module('node:fs/promises', () => ({ ...actualFs, access, default: { ...actualFs, access } }))
 
-vi.mock('@actions/core', () => ({ info: vi.fn() }))
-vi.mock('@actions/tool-cache', () => ({ cacheDir }))
-vi.mock('../src/download', () => ({ downloadReleaseAsset, extractArchive, sha256File }))
-vi.mock('../src/github', () => ({ findAsset, fetchAttestations }))
-vi.mock('../src/verify/digests', () => ({ assertApiDigest, assertChecksum, parseChecksums }))
-vi.mock('../src/verify/sigstore', () => ({ verifyCosignBundle, verifySlsaProvenance }))
+mock.module('@actions/core', () => ({ info: mock() }))
+mock.module('@actions/tool-cache', () => ({ cacheDir }))
+mock.module('../src/download', () => ({ downloadReleaseAsset, extractArchive, sha256File }))
+mock.module('../src/github', () => ({ findAsset, fetchAttestations }))
+mock.module('../src/verify/digests', () => ({ assertApiDigest, assertChecksum, parseChecksums }))
+mock.module('../src/verify/sigstore', () => ({ verifyCosignBundle, verifySlsaProvenance }))
 
 const { downloadAndVerify } = await import('../src/install')
 
@@ -70,7 +68,7 @@ describe('downloadAndVerify — reading the extracted binary', () => {
   let extractDir: string
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    mock.clearAllMocks()
     tmp = mkdtempSync(join(tmpdir(), 'setup-evolve-install-'))
     extractDir = join(tmp, 'extract')
     mkdirSync(extractDir, { recursive: true })
@@ -119,7 +117,7 @@ describe('downloadAndVerify — reading the extracted binary', () => {
 
     // The binary is read directly, never probed with a separate fs.access
     // check-then-use (the TOCTOU pattern the fix removed).
-    expect(vi.mocked(fs.access)).not.toHaveBeenCalled()
+    expect(fs.access).not.toHaveBeenCalled()
   })
 
   it('fails fast with ENOENT before downloading the bundle when the binary is missing', async () => {

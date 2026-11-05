@@ -1,1 +1,4 @@
+# the committed bundle must stay byte-identical to the build output
 dist/**
+# captured API responses and sigstore bundles, kept verbatim
+__tests__/fixtures/**

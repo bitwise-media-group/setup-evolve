@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { compress } from 'snappyjs'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, type Mock, mock } from 'bun:test'
 import { GITHUB_API_VERSION } from '../src/constants'
 import { fetchAttestations, type Octokit } from '../src/github'
 
@@ -28,14 +28,21 @@ const blobBody = (bundle: unknown) =>
 
 function mockOctokit(attestations: unknown[]): {
   octokit: Octokit
-  request: ReturnType<typeof vi.fn>
+  request: Mock<(...args: unknown[]) => Promise<unknown>>
 } {
-  const request = vi.fn(async () => ({ data: { attestations } }))
+  const request = mock(async () => ({ data: { attestations } }))
   return { octokit: { request } as unknown as Octokit, request }
 }
 
+// bun:test has no vi.stubGlobal: swap globalThis.fetch by hand and put the real
+// one back after every test.
+const realFetch = globalThis.fetch
+const stubFetch = (fn: unknown) => {
+  globalThis.fetch = fn as typeof fetch
+}
+
 afterEach(() => {
-  vi.unstubAllGlobals()
+  globalThis.fetch = realFetch
 })
 
 describe('fetchAttestations', () => {
@@ -55,8 +62,8 @@ describe('fetchAttestations', () => {
   })
 
   it('prefers inline bundles without touching the network', async () => {
-    const fetchMock = vi.fn()
-    vi.stubGlobal('fetch', fetchMock)
+    const fetchMock = mock()
+    stubFetch(fetchMock)
     const { octokit } = mockOctokit(apiResponse.attestations)
     const result = await fetchAttestations(octokit, DIGEST, PREDICATE)
     expect(result).toEqual(bundles)
@@ -64,11 +71,11 @@ describe('fetchAttestations', () => {
   })
 
   it('downloads and snappy-decompresses bundle_url when bundle is absent', async () => {
-    const fetchMock = vi.fn(async (url: string) => {
+    const fetchMock = mock(async (url: string) => {
       const index = url === 'https://blob.example/0' ? 0 : 1
       return new Response(blobBody(bundles[index]))
     })
-    vi.stubGlobal('fetch', fetchMock)
+    stubFetch(fetchMock)
     const { octokit } = mockOctokit([
       { repository_id: 1, bundle_url: 'https://blob.example/0' },
       { repository_id: 1, bundle_url: 'https://blob.example/1' },
@@ -79,10 +86,7 @@ describe('fetchAttestations', () => {
   })
 
   it('rejects when the bundle download fails', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => new Response(null, { status: 503 })),
-    )
+    stubFetch(mock(async () => new Response(null, { status: 503 })))
     const { octokit } = mockOctokit([{ repository_id: 1, bundle_url: 'https://blob.example/0' }])
     await expect(fetchAttestations(octokit, DIGEST, PREDICATE)).rejects.toThrow(
       /bundle download failed with status 503/,

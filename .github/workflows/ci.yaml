@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: MIT
 
 # Caller for the reusable CI workflow. It owns the push/pull_request triggers; the
-# core work runs in github-workflows/ci.yaml, which installs the mise-pinned
-# toolchain (node from the root mise.toml) and runs `mise run <task>` for each
-# canonical task the repo defines (lint / build / test here) as one job each. The
-# `build` task regenerates dist/ and the reusable workflow fails the run if the
-# committed bundle doesn't reproduce from src/.
+# core work runs in github-workflows/ci.yaml, which runs the canonical mise tasks
+# (lint / build / test) as one job each, with every tool -- bun included -- from
+# the toolchain submodule's pins. The `build` task regenerates dist/ and the
+# reusable workflow fails the run if the committed bundle doesn't reproduce from
+# src/.
 #
 # The integration and e2e matrix jobs are product-specific -- they run this action
 # for real against evolve's published releases -- so they stay here alongside the
@@ -36,20 +36,20 @@ jobs:
         with:
           persist-credentials: false
           submodules: true # the toolchain at .mise/, so mise resolves the same config as the ci job
-      # The same mise and node the reusable ci job runs (the root mise.toml pin), but
-      # only node: the integration suite needs nothing else. Its own cache prefix keeps
-      # this node-only install from being restored as the ci job's full toolset.
+      # The same mise and bun the reusable ci job runs (the toolchain's pin), but only
+      # bun: the integration suite needs nothing else. Its own cache prefix keeps this
+      # bun-only install from being restored as the ci job's full toolset.
       - uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
         with:
           version: v2026.10.25
           # sha256 of the linux-x64 mise binary for the version above, from the release's
           # SHASUMS256.txt -- the action verifies the extracted binary, not the archive
           sha256: 5d362ecc578dc7c146679b841dda949d6472cbf86ff5635db7afdca1b6b3fd87
-          install_args: node
+          install_args: aqua:oven-sh/bun
           cache_key_prefix: mise-integration
-      - run: npm ci
+      - run: bun install --frozen-lockfile
       - name: Real sigstore verification against live release assets
-        run: npx vitest run __tests__/integration
+        run: bun test __tests__/integration
         env:
           RUN_INTEGRATION: "1"
 

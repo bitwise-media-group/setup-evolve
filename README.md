@@ -118,22 +118,23 @@ CI enforces that the committed `dist/` bundle reproduces exactly from `src/`.
 
 ## Development
 
-The lint/build/test contract comes from the shared toolchain's node archetype (`bitwise-media-group/toolchain`),
-consumed as the `.mise/` submodule — clone with `--recurse-submodules` (or run `git submodule update --init`) so the
-root `mise.toml` can load its tasks and pinned tools.
+The action is built, type-checked, tested and formatted with [bun](https://bun.com); no Node.js install is needed to
+work on it (the published action still runs on the runner's `node24`). The lint/build/test contract comes from the
+shared toolchain's node archetype ([`bitwise-media-group/toolchain`](https://github.com/bitwise-media-group/toolchain)),
+consumed as the `.mise/` submodule, which also pins bun — clone with `--recurse-submodules` (or run
+`git submodule update --init`) so the root `mise.toml` can load its tasks and pinned tools.
 
 ```sh
-git submodule update --init                             # fetch .mise/ after a plain clone
-mise install                                            # the pinned node + lint tools
-npm ci
-mise run ci          # the gates CI runs: lint / build / test
-mise run pr          # the full pre-commit gate: fmt → lint → build → test
-npm run all          # the same lint + typecheck + unit tests + build, via npm directly
-RUN_INTEGRATION=1 npx vitest run __tests__/integration  # real crypto, network required
+git submodule update --init                       # fetch .mise/ after a plain clone
+mise install                                      # the pinned bun + lint tools
+mise run ci                                       # the gates CI runs: lint / build / test
+mise run pr                                       # the full pre-commit gate: fmt → lint → build → test
+bun test --isolate                                # unit tests only
+RUN_INTEGRATION=1 bun test __tests__/integration  # real crypto, network required
 ```
 
-The mise tasks just run the npm scripts under the hood (`make <task>` forwards to `mise run <task>`); the reusable CI
-workflow drives the same gates. `dist/` reproducibility from `src/` is verified in CI (`mise run build`), not at
-release.
+The mise tasks run the package.json scripts under the hood (`bun build`, `bun check`, `bun test`, `bun fmt`, biome for
+lint; `make <task>` forwards to `mise run <task>`); the reusable CI workflow drives the same gates. `dist/`
+reproducibility from `src/` is verified in CI (`mise run build`), not at release.
 
 Releases are automated with release-please from Conventional Commits; the `v1` major tag follows the latest release.

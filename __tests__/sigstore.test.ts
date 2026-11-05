@@ -5,18 +5,17 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 
-const verifyMock = vi.fn()
-const createVerifierMock = vi.fn(async () => ({ verify: verifyMock }))
+const verifyMock = mock()
+const createVerifierMock = mock(async () => ({ verify: verifyMock }))
 
-vi.mock('sigstore', () => ({
+mock.module('sigstore', () => ({
   createVerifier: createVerifierMock,
 }))
 
-const { VERIFY_POLICY, verifyCosignBundle, verifySlsaProvenance } = await import(
-  '../src/verify/sigstore'
-)
+const { VERIFY_POLICY, verifyCosignBundle, verifySlsaProvenance } =
+  await import('../src/verify/sigstore')
 
 const fixture = (name: string) =>
   JSON.parse(readFileSync(join(import.meta.dirname, 'fixtures', name), 'utf8'))

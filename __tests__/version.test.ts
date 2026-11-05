@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'bun:test'
 import { MIN_SUPPORTED_VERSION } from '../src/constants'
 import type { Octokit } from '../src/github'
 import { parseVersionSpec, resolveVersion } from '../src/version'
