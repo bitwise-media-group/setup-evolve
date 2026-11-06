@@ -70332,10 +70332,35 @@ var SQL_STRICT_EXTRA = [
 var SQL_STRICT_PATTERNS = [...sql_default, ...SQL_STRICT_EXTRA];
 var sql_strict_default = SQL_STRICT_PATTERNS;
 
+// node_modules/is-unsafe/src/util/decode-entities.js
+var NAMED = Object.freeze({
+  colon: ":",
+  Tab: "\t",
+  NewLine: `
+`
+});
+var ENTITY_RE = /&(?:#[xX]0*([0-9a-fA-F]{1,6});?|#0*([0-9]{1,7});?|([a-zA-Z][a-zA-Z0-9]{1,15});)/g;
+function decodeEntities(input) {
+  if (input.indexOf("&") === -1)
+    return input;
+  return input.replace(ENTITY_RE, (match, hex, dec, name) => {
+    if (name !== undefined) {
+      return Object.prototype.hasOwnProperty.call(NAMED, name) ? NAMED[name] : match;
+    }
+    const cp = hex !== undefined ? parseInt(hex, 16) : parseInt(dec, 10);
+    if (!Number.isFinite(cp) || cp > 1114111)
+      return match;
+    return String.fromCodePoint(cp);
+  });
+}
+
 // node_modules/is-unsafe/src/index.js
 html_default.label = "HTML";
 xml_default.label = "XML";
 svg_default.label = "SVG";
+html_default.decodeEntities = true;
+xml_default.decodeEntities = true;
+svg_default.decodeEntities = true;
 sql_default.label = "SQL";
 sql_strict_default.label = "SQL-STRICT";
 shell_default.label = "SHELL";
@@ -70383,10 +70408,17 @@ function normalise(context) {
     return { lists: context, regex: null };
   return { lists: [context], regex: null };
 }
+function decodedCopy(value, list) {
+  if (!list.decodeEntities)
+    return null;
+  const decoded = decodeEntities(value);
+  return decoded === value ? null : decoded;
+}
 function matchList(value, list) {
   const label = list.label ?? "CUSTOM";
+  const decoded = decodedCopy(value, list);
   for (const rule of list) {
-    if (rule.pattern.test(value)) {
+    if (rule.pattern.test(value) || decoded !== null && rule.pattern.test(decoded)) {
       return { context: label, id: rule.id, description: rule.description, pattern: rule.pattern };
     }
   }
@@ -97779,5 +97811,5 @@ export {
   run
 };
 
-//# debugId=E048BD8E7C98F67564756E2164756E21
+//# debugId=623EEBD04BCD550B64756E2164756E21
 //# sourceMappingURL=index.js.map
