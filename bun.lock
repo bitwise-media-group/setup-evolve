@@ -131,7 +131,7 @@
 
     "@tufjs/canonical-json": ["@tufjs/canonical-json@2.0.0", "", {}, "sha512-yVtV8zsdo8qFHe+/3kw81dSLyF7D576A5cCFCi4X7B39tWT7SekaEFUnvnWJHz+9qO7qJTah1JbrDjWKqFtdWA=="],
 
-    "@tufjs/models": ["@tufjs/models@5.0.1", "", { "dependencies": { "@tufjs/canonical-json": "2.0.0", "minimatch": "^10.2.6" } }, "sha512-wacy5twbJk36R0dTcGE3qmPNNH095bFselAYNrVCzf0Byd0t3+Qzk3+3gn/rHGP10FuHBVk4swg4aczr1c2z/g=="],
+    "@tufjs/models": ["@tufjs/models@5.0.2", "", { "dependencies": { "@tufjs/canonical-json": "2.0.0", "minimatch": "^10.2.6" } }, "sha512-YzKuFwBcH+m4/YIN0magcH5AjgYVnNFUGhP14vCs+Ckanqz86dDn6K0anjjb730Iu6SSqjzXQCo3FzVqYyT+wg=="],
 
     "@types/bun": ["@types/bun@1.4.4", "", { "dependencies": { "bun-types": "1.4.4" } }, "sha512-9wkRDXUXK124pEnAutE6n/l18j+i9GC5IAHK8TmX/2nlySETmky0OU6yL5U8pW1AoKh++AN9auDCr647BfurjQ=="],
 
@@ -239,7 +239,7 @@
 
     "tslib": ["tslib@2.9.1", "", {}, "sha512-a4Ux9VKuIMHsOS7ENbEq6hK2ZGYIT27Rtl0E4eD9KqwxhKiQeMZE/9xb3IdYwWaSOyIBQLExhQgXDTYoiCxnWA=="],
 
-    "tuf-js": ["tuf-js@6.0.1", "", { "dependencies": { "@gar/promise-retry": "^1.0.3", "@tufjs/models": "5.0.1", "debug": "^4.4.3" } }, "sha512-o59N1PU8xk0bBV3HpJ4jjwldIeze17yXW1XTv02CEEKdC3E/tnJDU3CPWDNT4IZpkx9Srv9v1DJZ+JTdo46THg=="],
+    "tuf-js": ["tuf-js@6.0.2", "", { "dependencies": { "@gar/promise-retry": "^1.0.3", "@tufjs/models": "5.0.2", "debug": "^4.4.3" } }, "sha512-k78oXrR/Ssi2kTXgP0paoQ7efyw/fO2RBgxXnTQTfoyZRM72XuT8D0ylG9NkJgdnYtx4LWo+qpGdpI4o7FIiJA=="],
 
     "tunnel": ["tunnel@0.0.6", "", {}, "sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg=="],
 
