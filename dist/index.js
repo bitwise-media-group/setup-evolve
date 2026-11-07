@@ -47817,7 +47817,7 @@ var require_ipv6 = __commonJS(function(exports) {
       address = this.parse4in6(address);
       const badCharacters = address.match(constants6.RE_BAD_CHARACTERS);
       if (badCharacters) {
-        throw new address_error_1.AddressError(`Bad character${badCharacters.length > 1 ? "s" : ""} detected in address: ${badCharacters.join("")}`, address.replace(constants6.RE_BAD_CHARACTERS, '<span class="parse-error">$1</span>'));
+        throw new address_error_1.AddressError(`Bad character${badCharacters.length > 1 ? "s" : ""} detected in address: ${badCharacters.join("")}`, address.replace(constants6.RE_BAD_CHARACTERS, (character) => `<span class="parse-error">${helpers.escapeHtml(character)}</span>`));
       }
       const badAddress = address.match(constants6.RE_BAD_ADDRESS);
       if (badAddress) {
@@ -97849,5 +97849,5 @@ export {
   run
 };
 
-//# debugId=35AB3856640FC0F364756E2164756E21
+//# debugId=EA276F61C9BD960D64756E2164756E21
 //# sourceMappingURL=index.js.map
