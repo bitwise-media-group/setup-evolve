@@ -54651,6 +54651,9 @@ var require_delegations = __commonJS(function(exports) {
       }
       roleMap = data.reduce((acc, role) => {
         const delegatedRole = role_1.DelegatedRole.fromJSON(role);
+        if (Object.hasOwn(acc, delegatedRole.name)) {
+          throw new error_1.ValueError(`duplicate delegated role: ${delegatedRole.name}`);
+        }
         return {
           ...acc,
           [delegatedRole.name]: delegatedRole
@@ -55188,7 +55191,7 @@ var require_fetcher = __commonJS(function(exports) {
 var require_package6 = __commonJS(function(exports, module) {
   module.exports = {
     name: "tuf-js",
-    version: "6.0.1",
+    version: "6.0.2",
     description: "JavaScript implementation of The Update Framework (TUF)",
     main: "dist/index.js",
     types: "dist/index.d.ts",
@@ -55216,13 +55219,13 @@ var require_package6 = __commonJS(function(exports, module) {
     },
     homepage: "https://github.com/theupdateframework/tuf-js/tree/main/packages/client#readme",
     devDependencies: {
-      "@tufjs/repo-mock": "5.0.1",
+      "@tufjs/repo-mock": "5.0.2",
       "@types/debug": "^4.1.13",
       "@types/retry": "^0.12.5"
     },
     dependencies: {
       "@gar/promise-retry": "^1.0.3",
-      "@tufjs/models": "5.0.1",
+      "@tufjs/models": "5.0.2",
       debug: "^4.4.3"
     },
     engines: {
@@ -97849,5 +97852,5 @@ export {
   run
 };
 
-//# debugId=EA276F61C9BD960D64756E2164756E21
+//# debugId=00B1FF01D1CA0D9864756E2164756E21
 //# sourceMappingURL=index.js.map
