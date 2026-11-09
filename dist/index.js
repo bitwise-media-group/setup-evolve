@@ -44270,7 +44270,7 @@ globstar while`, t, d, e, u, m), this.matchOne(t.slice(d), e.slice(u), s))
           t();
       }
       onResume(t) {
-        this.signal?.aborted || (this.paused ? this.#t.push(t) : t());
+        this.paused ? this.#t.push(t) : t();
       }
       async matchCheck(t, e) {
         if (e && this.opts.nodir)
@@ -44336,12 +44336,14 @@ globstar while`, t, d, e, u, m), this.matchOne(t.slice(d), e.slice(u), s))
         i && this.matchFinish(i, e);
       }
       walkCB(t, e, s) {
-        this.signal?.aborted && s(), this.walkCB2(t, e, new Ns.Processor(this.opts), s);
+        if (this.signal?.aborted)
+          return s();
+        this.walkCB2(t, e, new Ns.Processor(this.opts), s);
       }
       walkCB2(t, e, s, i) {
-        if (this.#h(t))
+        if (this.#h(t) || this.signal?.aborted)
           return i();
-        if (this.signal?.aborted && i(), this.paused) {
+        if (this.paused) {
           this.onResume(() => this.walkCB2(t, e, s, i));
           return;
         }
@@ -44372,12 +44374,14 @@ globstar while`, t, d, e, u, m), this.matchOne(t.slice(d), e.slice(u), s))
         h();
       }
       walkCBSync(t, e, s) {
-        this.signal?.aborted && s(), this.walkCB2Sync(t, e, new Ns.Processor(this.opts), s);
+        if (this.signal?.aborted)
+          return s();
+        this.walkCB2Sync(t, e, new Ns.Processor(this.opts), s);
       }
       walkCB2Sync(t, e, s, i) {
-        if (this.#h(t))
+        if (this.#h(t) || this.signal?.aborted)
           return i();
-        if (this.signal?.aborted && i(), this.paused) {
+        if (this.paused) {
           this.onResume(() => this.walkCB2Sync(t, e, s, i));
           return;
         }
@@ -97867,5 +97871,5 @@ export {
   run
 };
 
-//# debugId=366E96649A13224264756E2164756E21
+//# debugId=FB8360253865956464756E2164756E21
 //# sourceMappingURL=index.js.map
