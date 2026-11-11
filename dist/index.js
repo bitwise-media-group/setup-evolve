@@ -20488,125 +20488,21 @@ var require_src = __commonJS(function(exports, module) {
 });
 
 // node_modules/agent-base/dist/helpers.js
-var require_helpers = __commonJS(function(exports) {
-  var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-    if (k2 === undefined)
-      k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() {
-        return m[k];
-      } };
-    }
-    Object.defineProperty(o, k2, desc);
-  } : function(o, m, k, k2) {
-    if (k2 === undefined)
-      k2 = k;
-    o[k2] = m[k];
-  });
-  var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-  } : function(o, v) {
-    o["default"] = v;
-  });
-  var __importStar = exports && exports.__importStar || function(mod) {
-    if (mod && mod.__esModule)
-      return mod;
-    var result = {};
-    if (mod != null) {
-      for (var k in mod)
-        if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
-          __createBinding(result, mod, k);
-    }
-    __setModuleDefault(result, mod);
-    return result;
-  };
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.req = exports.json = exports.toBuffer = undefined;
-  var http = __importStar(__require("http"));
-  var https = __importStar(__require("https"));
-  async function toBuffer(stream) {
-    let length = 0;
-    const chunks = [];
-    for await (const chunk of stream) {
-      length += chunk.length;
-      chunks.push(chunk);
-    }
-    return Buffer.concat(chunks, length);
-  }
-  exports.toBuffer = toBuffer;
-  async function json(stream) {
-    const buf = await toBuffer(stream);
-    const str = buf.toString("utf8");
-    try {
-      return JSON.parse(str);
-    } catch (_err) {
-      const err = _err;
-      err.message += ` (input: ${str})`;
-      throw err;
-    }
-  }
-  exports.json = json;
-  function req(url, opts = {}) {
-    const href = typeof url === "string" ? url : url.href;
-    const req = (href.startsWith("https:") ? https : http).request(url, opts);
-    const promise = new Promise((resolve, reject) => {
-      req.once("response", resolve).once("error", reject).end();
-    });
-    req.then = promise.then.bind(promise);
-    return req;
-  }
-  exports.req = req;
-});
+var init_helpers = () => {};
 
 // node_modules/agent-base/dist/index.js
-var require_dist = __commonJS(function(exports) {
-  var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-    if (k2 === undefined)
-      k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() {
-        return m[k];
-      } };
-    }
-    Object.defineProperty(o, k2, desc);
-  } : function(o, m, k, k2) {
-    if (k2 === undefined)
-      k2 = k;
-    o[k2] = m[k];
-  });
-  var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-  } : function(o, v) {
-    o["default"] = v;
-  });
-  var __importStar = exports && exports.__importStar || function(mod) {
-    if (mod && mod.__esModule)
-      return mod;
-    var result = {};
-    if (mod != null) {
-      for (var k in mod)
-        if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
-          __createBinding(result, mod, k);
-    }
-    __setModuleDefault(result, mod);
-    return result;
-  };
-  var __exportStar = exports && exports.__exportStar || function(m, exports2) {
-    for (var p in m)
-      if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports2, p))
-        __createBinding(exports2, m, p);
-  };
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.Agent = undefined;
-  var net = __importStar(__require("net"));
-  var http = __importStar(__require("http"));
-  var https_1 = __require("https");
-  __exportStar(require_helpers(), exports);
-  var INTERNAL = Symbol("AgentBaseInternalState");
-
-  class Agent extends http.Agent {
+var exports_dist = {};
+__export(exports_dist, {
+  Agent: () => Agent4
+});
+import * as net from "net";
+import * as http3 from "http";
+import { Agent as HttpsAgent } from "https";
+var INTERNAL, Agent4;
+var init_dist = __esm(() => {
+  init_helpers();
+  INTERNAL = Symbol("AgentBaseInternalState");
+  Agent4 = class Agent4 extends http3.Agent {
     constructor(opts) {
       super(opts);
       this[INTERNAL] = {};
@@ -20655,7 +20551,7 @@ var require_dist = __commonJS(function(exports) {
     getName(options) {
       const secureEndpoint = this.isSecureEndpoint(options);
       if (secureEndpoint) {
-        return https_1.Agent.prototype.getName.call(this, options);
+        return HttpsAgent.prototype.getName.call(this, options);
       }
       return super.getName(options);
     }
@@ -20668,7 +20564,7 @@ var require_dist = __commonJS(function(exports) {
       const fakeSocket = this.incrementSockets(name);
       Promise.resolve().then(() => this.connect(req, connectOpts)).then((socket) => {
         this.decrementSockets(name, fakeSocket);
-        if (socket instanceof http.Agent) {
+        if (typeof socket.addRequest === "function") {
           try {
             return socket.addRequest(req, connectOpts);
           } catch (err) {
@@ -20706,175 +20602,185 @@ var require_dist = __commonJS(function(exports) {
         this[INTERNAL].protocol = v;
       }
     }
-  }
-  exports.Agent = Agent;
+  };
 });
 
 // node_modules/https-proxy-agent/dist/parse-proxy-response.js
-var require_parse_proxy_response = __commonJS(function(exports) {
-  var __importDefault = exports && exports.__importDefault || function(mod) {
-    return mod && mod.__esModule ? mod : { default: mod };
-  };
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.parseProxyResponse = undefined;
-  var debug_1 = __importDefault(require_src());
-  var debug = (0, debug_1.default)("https-proxy-agent:parse-proxy-response");
-  function parseProxyResponse(socket) {
-    return new Promise((resolve, reject) => {
-      let buffersLength = 0;
-      const buffers = [];
-      function read() {
-        const b = socket.read();
-        if (b)
-          ondata(b);
-        else
-          socket.once("readable", read);
-      }
-      function cleanup() {
-        socket.removeListener("end", onend);
-        socket.removeListener("error", onerror);
-        socket.removeListener("readable", read);
-      }
-      function onend() {
-        cleanup();
-        debug("onend");
-        reject(new Error("Proxy connection ended before receiving CONNECT response"));
-      }
-      function onerror(err) {
-        cleanup();
-        debug("onerror %o", err);
-        reject(err);
-      }
-      function ondata(b) {
-        buffers.push(b);
-        buffersLength += b.length;
-        const buffered = Buffer.concat(buffers, buffersLength);
-        const endOfHeaders = buffered.indexOf(`\r
+function parseProxyResponse(socket) {
+  return new Promise((resolve, reject) => {
+    let buffersLength = 0;
+    const buffers = [];
+    function read() {
+      const b = socket.read();
+      if (b)
+        ondata(b);
+      else
+        socket.once("readable", read);
+    }
+    function cleanup() {
+      socket.removeListener("end", onend);
+      socket.removeListener("error", onerror);
+      socket.removeListener("readable", read);
+    }
+    function onend() {
+      cleanup();
+      debug2("onend");
+      reject(new Error("Proxy connection ended before receiving CONNECT response"));
+    }
+    function onerror(err) {
+      cleanup();
+      debug2("onerror %o", err);
+      reject(err);
+    }
+    function ondata(b) {
+      buffers.push(b);
+      buffersLength += b.length;
+      const buffered = Buffer.concat(buffers, buffersLength);
+      const endOfHeaders = buffered.indexOf(`\r
 \r
 `);
-        if (endOfHeaders === -1) {
-          debug("have not received end of HTTP headers yet...");
-          read();
-          return;
-        }
-        const headerParts = buffered.slice(0, endOfHeaders).toString("ascii").split(`\r
-`);
-        const firstLine = headerParts.shift();
-        if (!firstLine) {
-          socket.destroy();
-          return reject(new Error("No header received from proxy CONNECT response"));
-        }
-        const firstLineParts = firstLine.split(" ");
-        const statusCode = +firstLineParts[1];
-        const statusText = firstLineParts.slice(2).join(" ");
-        const headers = {};
-        for (const header of headerParts) {
-          if (!header)
-            continue;
-          const firstColon = header.indexOf(":");
-          if (firstColon === -1) {
-            socket.destroy();
-            return reject(new Error(`Invalid header from proxy CONNECT response: "${header}"`));
-          }
-          const key = header.slice(0, firstColon).toLowerCase();
-          const value = header.slice(firstColon + 1).trimStart();
-          const current = headers[key];
-          if (typeof current === "string") {
-            headers[key] = [current, value];
-          } else if (Array.isArray(current)) {
-            current.push(value);
-          } else {
-            headers[key] = value;
-          }
-        }
-        debug("got proxy server response: %o %o", firstLine, headers);
-        cleanup();
-        resolve({
-          connect: {
-            statusCode,
-            statusText,
-            headers
-          },
-          buffered
-        });
+      if (endOfHeaders === -1) {
+        debug2("have not received end of HTTP headers yet...");
+        read();
+        return;
       }
-      socket.on("error", onerror);
-      socket.on("end", onend);
-      read();
-    });
-  }
-  exports.parseProxyResponse = parseProxyResponse;
+      const headerParts = buffered.slice(0, endOfHeaders).toString("ascii").split(`\r
+`);
+      const firstLine = headerParts.shift();
+      if (!firstLine) {
+        socket.destroy();
+        return reject(new Error("No header received from proxy CONNECT response"));
+      }
+      const firstLineParts = firstLine.split(" ");
+      const statusCode = +firstLineParts[1];
+      const statusText = firstLineParts.slice(2).join(" ");
+      const headers = {};
+      for (const header of headerParts) {
+        if (!header)
+          continue;
+        const firstColon = header.indexOf(":");
+        if (firstColon === -1) {
+          socket.destroy();
+          return reject(new Error(`Invalid header from proxy CONNECT response: "${header}"`));
+        }
+        const key = header.slice(0, firstColon).toLowerCase();
+        const value = header.slice(firstColon + 1).trimStart();
+        const current = headers[key];
+        if (typeof current === "string") {
+          headers[key] = [current, value];
+        } else if (Array.isArray(current)) {
+          current.push(value);
+        } else {
+          headers[key] = value;
+        }
+      }
+      debug2("got proxy server response: %o %o", firstLine, headers);
+      cleanup();
+      resolve({
+        connect: {
+          statusCode,
+          statusText,
+          headers
+        },
+        buffered
+      });
+    }
+    socket.on("error", onerror);
+    socket.on("end", onend);
+    read();
+  });
+}
+var import_debug2, debug2;
+var init_parse_proxy_response = __esm(() => {
+  import_debug2 = __toESM(require_src(), 1);
+  debug2 = import_debug2.default("https-proxy-agent:parse-proxy-response");
 });
 
-// node_modules/https-proxy-agent/dist/index.js
-var require_dist2 = __commonJS(function(exports) {
-  var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-    if (k2 === undefined)
-      k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() {
-        return m[k];
-      } };
+// node_modules/proxy-agent-negotiate/dist/index.js
+function createNegotiateAuth() {
+  return async ({ response, scheme }) => {
+    if (scheme.toLowerCase() !== "negotiate") {
+      throw new Error(`Expected Negotiate scheme but got "${scheme}"`);
     }
-    Object.defineProperty(o, k2, desc);
-  } : function(o, m, k, k2) {
-    if (k2 === undefined)
-      k2 = k;
-    o[k2] = m[k];
-  });
-  var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-  } : function(o, v) {
-    o["default"] = v;
-  });
-  var __importStar = exports && exports.__importStar || function(mod) {
-    if (mod && mod.__esModule)
-      return mod;
-    var result = {};
-    if (mod != null) {
-      for (var k in mod)
-        if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
-          __createBinding(result, mod, k);
+    let kerberos;
+    try {
+      kerberos = await import("kerberos");
+    } catch {
+      throw new Error('The "kerberos" package is required for Negotiate proxy authentication. Install it with: npm install kerberos');
     }
-    __setModuleDefault(result, mod);
-    return result;
-  };
-  var __importDefault = exports && exports.__importDefault || function(mod) {
-    return mod && mod.__esModule ? mod : { default: mod };
-  };
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.HttpsProxyAgent = undefined;
-  var net = __importStar(__require("net"));
-  var tls = __importStar(__require("tls"));
-  var assert_1 = __importDefault(__require("assert"));
-  var debug_1 = __importDefault(require_src());
-  var agent_base_1 = require_dist();
-  var url_1 = __require("url");
-  var parse_proxy_response_1 = require_parse_proxy_response();
-  var debug = (0, debug_1.default)("https-proxy-agent");
-  var setServernameFromNonIpHost = (options) => {
-    if (options.servername === undefined && options.host && !net.isIP(options.host)) {
-      return {
-        ...options,
-        servername: options.host
-      };
+    const proxyAuthenticate = response.headers["proxy-authenticate"] || "";
+    const challengeHeader = Array.isArray(proxyAuthenticate) ? proxyAuthenticate[0] : proxyAuthenticate;
+    const serverToken = typeof challengeHeader === "string" && challengeHeader.includes(" ") ? challengeHeader.split(" ").slice(1).join(" ") : undefined;
+    const client = await kerberos.initializeClient("HTTP@proxy", {
+      mechOID: kerberos.GSS_MECH_OID_SPNEGO
+    });
+    const token = await client.step(serverToken || "");
+    if (!token) {
+      throw new Error("Kerberos client.step() returned no token");
     }
-    return options;
+    return {
+      headers: {
+        "Proxy-Authorization": `Negotiate ${token}`
+      }
+    };
   };
+}
 
-  class HttpsProxyAgent extends agent_base_1.Agent {
+// node_modules/https-proxy-agent/dist/index.js
+var exports_dist2 = {};
+__export(exports_dist2, {
+  HttpsProxyAgent: () => HttpsProxyAgent
+});
+import * as net2 from "net";
+import * as tls from "tls";
+import assert4 from "assert";
+import { URL as URL2 } from "url";
+function resume(socket) {
+  setImmediate(() => {
+    socket.resume();
+  });
+}
+function omit(obj, ...keys) {
+  const ret = {};
+  let key;
+  for (key in obj) {
+    if (!keys.includes(key)) {
+      ret[key] = obj[key];
+    }
+  }
+  return ret;
+}
+var import_debug3, debug3, setServernameFromNonIpHost = (options) => {
+  if (options.servername === undefined && options.host && !net2.isIP(options.host)) {
+    return {
+      ...options,
+      servername: options.host
+    };
+  }
+  return options;
+}, HttpsProxyAgent;
+var init_dist2 = __esm(() => {
+  init_dist();
+  init_parse_proxy_response();
+  import_debug3 = __toESM(require_src(), 1);
+  debug3 = import_debug3.default("https-proxy-agent");
+  HttpsProxyAgent = class HttpsProxyAgent extends Agent4 {
     constructor(proxy, opts) {
       super(opts);
       this.options = { path: undefined };
-      this.proxy = typeof proxy === "string" ? new url_1.URL(proxy) : proxy;
+      this.proxy = typeof proxy === "string" ? new URL2(proxy) : proxy;
       this.proxyHeaders = opts?.headers ?? {};
-      debug("Creating new HttpsProxyAgent instance: %o", this.proxy.href);
+      debug3("Creating new HttpsProxyAgent instance: %o", this.proxy.href);
+      if (opts?.negotiate) {
+        this.onProxyAuth = createNegotiateAuth();
+      } else if (opts?.onProxyAuth) {
+        this.onProxyAuth = opts.onProxyAuth;
+      }
       const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, "");
       const port = this.proxy.port ? parseInt(this.proxy.port, 10) : this.proxy.protocol === "https:" ? 443 : 80;
       this.connectOpts = {
         ALPNProtocols: ["http/1.1"],
-        ...opts ? omit(opts, "headers") : null,
+        ...opts ? omit(opts, "headers", "onProxyAuth", "negotiate") : null,
         host,
         port
       };
@@ -20886,14 +20792,14 @@ var require_dist2 = __commonJS(function(exports) {
       }
       let socket;
       if (proxy.protocol === "https:") {
-        debug("Creating `tls.Socket`: %o", this.connectOpts);
+        debug3("Creating `tls.Socket`: %o", this.connectOpts);
         socket = tls.connect(setServernameFromNonIpHost(this.connectOpts));
       } else {
-        debug("Creating `net.Socket`: %o", this.connectOpts);
-        socket = net.connect(this.connectOpts);
+        debug3("Creating `net.Socket`: %o", this.connectOpts);
+        socket = net2.connect(this.connectOpts);
       }
       const headers = typeof this.proxyHeaders === "function" ? this.proxyHeaders() : { ...this.proxyHeaders };
-      const host = net.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
+      const host = net2.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
       let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r
 `;
       if (proxy.username || proxy.password) {
@@ -20908,16 +20814,81 @@ var require_dist2 = __commonJS(function(exports) {
         payload += `${name}: ${headers[name]}\r
 `;
       }
-      const proxyResponsePromise = (0, parse_proxy_response_1.parseProxyResponse)(socket);
+      const proxyResponsePromise = parseProxyResponse(socket);
       socket.write(`${payload}\r
 `);
-      const { connect, buffered } = await proxyResponsePromise;
-      req.emit("proxyConnect", connect);
-      this.emit("proxyConnect", connect, req);
-      if (connect.statusCode === 200) {
+      const { connect: connect3, buffered } = await proxyResponsePromise;
+      req.emit("proxyConnect", connect3);
+      this.emit("proxyConnect", connect3, req);
+      req.emit("proxy", { proxy: this.proxy.href, socket });
+      if (connect3.statusCode === 200) {
         req.once("socket", resume);
         if (opts.secureEndpoint) {
-          debug("Upgrading socket connection to TLS");
+          debug3("Upgrading socket connection to TLS");
+          return tls.connect({
+            ...omit(setServernameFromNonIpHost(opts), "host", "path", "port"),
+            socket
+          });
+        }
+        return socket;
+      }
+      if (connect3.statusCode === 407 && this.onProxyAuth) {
+        debug3("Got 407 response, invoking onProxyAuth callback");
+        socket.destroy();
+        const proxyAuthenticate = connect3.headers["proxy-authenticate"] || "";
+        const scheme = Array.isArray(proxyAuthenticate) ? proxyAuthenticate[0].split(/\s/)[0] : proxyAuthenticate.split(/\s/)[0];
+        const authResponse = await this.onProxyAuth({
+          response: connect3,
+          scheme
+        });
+        return this._connectWithAuth(req, opts, authResponse.headers);
+      }
+      socket.destroy();
+      const fakeSocket = new net2.Socket({ writable: false });
+      fakeSocket.readable = true;
+      req.once("socket", (s) => {
+        debug3("Replaying proxy buffer for failed request");
+        assert4(s.listenerCount("data") > 0);
+        s.push(buffered);
+        s.push(null);
+      });
+      return fakeSocket;
+    }
+    async _connectWithAuth(req, opts, authHeaders) {
+      const { proxy } = this;
+      let socket;
+      if (proxy.protocol === "https:") {
+        socket = tls.connect(setServernameFromNonIpHost(this.connectOpts));
+      } else {
+        socket = net2.connect(this.connectOpts);
+      }
+      const headers = typeof this.proxyHeaders === "function" ? this.proxyHeaders() : { ...this.proxyHeaders };
+      const host = net2.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
+      let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r
+`;
+      if (proxy.username || proxy.password) {
+        const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
+        headers["Proxy-Authorization"] = `Basic ${Buffer.from(auth).toString("base64")}`;
+      }
+      Object.assign(headers, authHeaders);
+      headers.Host = `${host}:${opts.port}`;
+      if (!headers["Proxy-Connection"]) {
+        headers["Proxy-Connection"] = this.keepAlive ? "Keep-Alive" : "close";
+      }
+      for (const name of Object.keys(headers)) {
+        payload += `${name}: ${headers[name]}\r
+`;
+      }
+      const proxyResponsePromise = parseProxyResponse(socket);
+      socket.write(`${payload}\r
+`);
+      const { connect: connect3 } = await proxyResponsePromise;
+      req.emit("proxyConnect", connect3);
+      this.emit("proxyConnect", connect3, req);
+      if (connect3.statusCode === 200) {
+        req.once("socket", resume);
+        if (opts.secureEndpoint) {
+          debug3("Upgrading socket connection to TLS");
           return tls.connect({
             ...omit(setServernameFromNonIpHost(opts), "host", "path", "port"),
             socket
@@ -20926,91 +20897,51 @@ var require_dist2 = __commonJS(function(exports) {
         return socket;
       }
       socket.destroy();
-      const fakeSocket = new net.Socket({ writable: false });
-      fakeSocket.readable = true;
-      req.once("socket", (s) => {
-        debug("Replaying proxy buffer for failed request");
-        (0, assert_1.default)(s.listenerCount("data") > 0);
-        s.push(buffered);
-        s.push(null);
-      });
-      return fakeSocket;
+      throw new Error(`Proxy authentication failed with status ${connect3.statusCode} after retry`);
     }
-  }
+  };
   HttpsProxyAgent.protocols = ["http", "https"];
-  exports.HttpsProxyAgent = HttpsProxyAgent;
-  function resume(socket) {
-    socket.resume();
-  }
-  function omit(obj, ...keys) {
-    const ret = {};
-    let key;
-    for (key in obj) {
-      if (!keys.includes(key)) {
-        ret[key] = obj[key];
-      }
-    }
-    return ret;
-  }
 });
 
 // node_modules/http-proxy-agent/dist/index.js
-var require_dist3 = __commonJS(function(exports) {
-  var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
-    if (k2 === undefined)
-      k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() {
-        return m[k];
-      } };
+var exports_dist3 = {};
+__export(exports_dist3, {
+  HttpProxyAgent: () => HttpProxyAgent
+});
+import * as net3 from "net";
+import * as tls2 from "tls";
+import { once } from "events";
+import { URL as URL3 } from "url";
+function omit2(obj, ...keys) {
+  const ret = {};
+  let key;
+  for (key in obj) {
+    if (!keys.includes(key)) {
+      ret[key] = obj[key];
     }
-    Object.defineProperty(o, k2, desc);
-  } : function(o, m, k, k2) {
-    if (k2 === undefined)
-      k2 = k;
-    o[k2] = m[k];
-  });
-  var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-  } : function(o, v) {
-    o["default"] = v;
-  });
-  var __importStar = exports && exports.__importStar || function(mod) {
-    if (mod && mod.__esModule)
-      return mod;
-    var result = {};
-    if (mod != null) {
-      for (var k in mod)
-        if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k))
-          __createBinding(result, mod, k);
-    }
-    __setModuleDefault(result, mod);
-    return result;
-  };
-  var __importDefault = exports && exports.__importDefault || function(mod) {
-    return mod && mod.__esModule ? mod : { default: mod };
-  };
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.HttpProxyAgent = undefined;
-  var net = __importStar(__require("net"));
-  var tls = __importStar(__require("tls"));
-  var debug_1 = __importDefault(require_src());
-  var events_1 = __require("events");
-  var agent_base_1 = require_dist();
-  var url_1 = __require("url");
-  var debug = (0, debug_1.default)("http-proxy-agent");
-
-  class HttpProxyAgent extends agent_base_1.Agent {
+  }
+  return ret;
+}
+var import_debug4, debug4, HttpProxyAgent;
+var init_dist3 = __esm(() => {
+  init_dist();
+  import_debug4 = __toESM(require_src(), 1);
+  debug4 = import_debug4.default("http-proxy-agent");
+  HttpProxyAgent = class HttpProxyAgent extends Agent4 {
     constructor(proxy, opts) {
       super(opts);
-      this.proxy = typeof proxy === "string" ? new url_1.URL(proxy) : proxy;
+      this.proxy = typeof proxy === "string" ? new URL3(proxy) : proxy;
       this.proxyHeaders = opts?.headers ?? {};
-      debug("Creating new HttpProxyAgent instance: %o", this.proxy.href);
+      debug4("Creating new HttpProxyAgent instance: %o", this.proxy.href);
+      if (opts?.negotiate) {
+        this.onProxyAuth = createNegotiateAuth();
+      } else if (opts?.onProxyAuth) {
+        this.onProxyAuth = opts.onProxyAuth;
+      }
       const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, "");
       const port = this.proxy.port ? parseInt(this.proxy.port, 10) : this.proxy.protocol === "https:" ? 443 : 80;
       this.connectOpts = {
-        ...opts ? omit(opts, "headers") : null,
+        ...opts ? omit2(opts, "headers", "onProxyAuth", "negotiate") : null,
         host,
         port
       };
@@ -21025,7 +20956,7 @@ var require_dist3 = __commonJS(function(exports) {
       const protocol = opts.secureEndpoint ? "https:" : "http:";
       const hostname = req.getHeader("host") || "localhost";
       const base = `${protocol}//${hostname}`;
-      const url = new url_1.URL(req.path, base);
+      const url = new URL3(req.path, base);
       if (opts.port !== 80) {
         url.port = String(opts.port);
       }
@@ -21052,41 +20983,34 @@ var require_dist3 = __commonJS(function(exports) {
       }
       let first;
       let endOfHeaders;
-      debug("Regenerating stored HTTP header string for request");
+      debug4("Regenerating stored HTTP header string for request");
       req._implicitHeader();
       if (req.outputData && req.outputData.length > 0) {
-        debug("Patching connection write() output buffer with updated header");
+        debug4("Patching connection write() output buffer with updated header");
         first = req.outputData[0].data;
         endOfHeaders = first.indexOf(`\r
 \r
 `) + 4;
         req.outputData[0].data = req._header + first.substring(endOfHeaders);
-        debug("Output buffer: %o", req.outputData[0].data);
+        debug4("Output buffer: %o", req.outputData[0].data);
       }
       let socket;
       if (this.proxy.protocol === "https:") {
-        debug("Creating `tls.Socket`: %o", this.connectOpts);
-        socket = tls.connect(this.connectOpts);
+        debug4("Creating `tls.Socket`: %o", this.connectOpts);
+        socket = tls2.connect(this.connectOpts);
       } else {
-        debug("Creating `net.Socket`: %o", this.connectOpts);
-        socket = net.connect(this.connectOpts);
+        debug4("Creating `net.Socket`: %o", this.connectOpts);
+        socket = net3.connect(this.connectOpts);
       }
-      await (0, events_1.once)(socket, "connect");
+      await once(socket, "connect");
+      const connect = { socket };
+      req.emit("proxyConnect", connect);
+      this.emit("proxyConnect", connect, req);
+      req.emit("proxy", { proxy: this.proxy.href, socket });
       return socket;
     }
-  }
+  };
   HttpProxyAgent.protocols = ["http", "https"];
-  exports.HttpProxyAgent = HttpProxyAgent;
-  function omit(obj, ...keys) {
-    const ret = {};
-    let key;
-    for (key in obj) {
-      if (!keys.includes(key)) {
-        ret[key] = obj[key];
-      }
-    }
-    return ret;
-  }
 });
 
 // node_modules/@azure/core-tracing/dist/commonjs/state-cjs.js
@@ -27125,7 +27049,7 @@ var require_sigstore_verification = __commonJS(function(exports) {
 });
 
 // node_modules/@sigstore/protobuf-specs/dist/index.js
-var require_dist4 = __commonJS(function(exports) {
+var require_dist = __commonJS(function(exports) {
   var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
     if (k2 === undefined)
       k2 = k;
@@ -27186,7 +27110,7 @@ var require_build = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.toMessageSignatureBundle = toMessageSignatureBundle;
   exports.toDSSEBundle = toDSSEBundle;
-  var protobuf_specs_1 = require_dist4();
+  var protobuf_specs_1 = require_dist();
   var bundle_1 = require_bundle();
   function toMessageSignatureBundle(options) {
     return {
@@ -27438,7 +27362,7 @@ var require_validate = __commonJS(function(exports) {
 var require_serialized = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.envelopeToJSON = exports.envelopeFromJSON = exports.bundleToJSON = exports.bundleFromJSON = undefined;
-  var protobuf_specs_1 = require_dist4();
+  var protobuf_specs_1 = require_dist();
   var bundle_1 = require_bundle();
   var validate_1 = require_validate();
   var bundleFromJSON = (obj) => {
@@ -27472,7 +27396,7 @@ var require_serialized = __commonJS(function(exports) {
 });
 
 // node_modules/@sigstore/bundle/dist/index.js
-var require_dist5 = __commonJS(function(exports) {
+var require_dist2 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.isBundleV01 = exports.assertBundleV02 = exports.assertBundleV01 = exports.assertBundleLatest = exports.assertBundle = exports.envelopeToJSON = exports.envelopeFromJSON = exports.bundleToJSON = exports.bundleFromJSON = exports.ValidationError = exports.isBundleWithPublicKey = exports.isBundleWithMessageSignature = exports.isBundleWithDsseEnvelope = exports.isBundleWithCertificateChain = exports.BUNDLE_V03_MEDIA_TYPE = exports.BUNDLE_V03_LEGACY_MEDIA_TYPE = exports.BUNDLE_V02_MEDIA_TYPE = exports.BUNDLE_V01_MEDIA_TYPE = exports.toMessageSignatureBundle = exports.toDSSEBundle = undefined;
   var build_1 = require_build();
@@ -28937,7 +28861,7 @@ var require_x509 = __commonJS(function(exports) {
 });
 
 // node_modules/@sigstore/core/dist/index.js
-var require_dist6 = __commonJS(function(exports) {
+var require_dist3 = __commonJS(function(exports) {
   var __createBinding = exports && exports.__createBinding || (Object.create ? function(o, m, k, k2) {
     if (k2 === undefined)
       k2 = k;
@@ -29017,7 +28941,7 @@ var require_dist6 = __commonJS(function(exports) {
 var require_oidc = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.extractJWTSubject = extractJWTSubject;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   function extractJWTSubject(jwt) {
     const parts = jwt.split(".", 3);
     const payload = JSON.parse(core_1.encoding.base64Decode(parts[1]));
@@ -29150,7 +29074,7 @@ var require_util9 = __commonJS(function(exports) {
   }();
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.ua = exports.oidc = exports.pem = exports.json = exports.encoding = exports.dsse = exports.crypto = undefined;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   Object.defineProperty(exports, "crypto", { enumerable: true, get: function() {
     return core_1.crypto;
   } });
@@ -29262,7 +29186,7 @@ var require_bundle2 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.toMessageSignatureBundle = toMessageSignatureBundle;
   exports.toDSSEBundle = toDSSEBundle;
-  var sigstore = __importStar(require_dist5());
+  var sigstore = __importStar(require_dist2());
   var util_1 = require_util9();
   function toMessageSignatureBundle(artifact, signature) {
     const digest = util_1.crypto.digest("sha256", artifact.data);
@@ -36092,7 +36016,7 @@ var require_http_cache_semantics = __commonJS(function(exports, module) {
 });
 
 // node_modules/negotiator/node_modules/content-type/dist/index.js
-var require_dist7 = __commonJS(function(exports) {
+var require_dist4 = __commonJS(function(exports) {
   /*!
    * content-type
    * Copyright(c) 2015 Douglas Christopher Wilson
@@ -36239,7 +36163,7 @@ var require_accept = __commonJS(function(exports, module) {
    * Copyright(c) 2026 Blake Embrey
    * MIT Licensed
    */
-  var contentType = require_dist7();
+  var contentType = require_dist4();
   module.exports = parseAccept;
   function parseAccept(header) {
     var values = [];
@@ -36433,7 +36357,7 @@ var require_encoding3 = __commonJS(function(exports, module) {
 
 // node_modules/negotiator/lib/language.js
 var require_language = __commonJS(function(exports, module) {
-  var contentType = require_dist7();
+  var contentType = require_dist4();
   var parseAccept = require_accept();
   module.exports = preferredLanguages;
   module.exports.preferredLanguages = preferredLanguages;
@@ -36517,7 +36441,7 @@ var require_language = __commonJS(function(exports, module) {
 
 // node_modules/negotiator/lib/mediaType.js
 var require_mediaType = __commonJS(function(exports, module) {
-  var contentType = require_dist7();
+  var contentType = require_dist4();
   var parseAcceptHeader = require_accept();
   module.exports = preferredMediaTypes;
   module.exports.preferredMediaTypes = preferredMediaTypes;
@@ -45488,532 +45412,6 @@ var require_options2 = __commonJS(function(exports, module) {
   };
 });
 
-// node_modules/@npmcli/agent/node_modules/agent-base/dist/helpers.js
-var init_helpers = () => {};
-
-// node_modules/@npmcli/agent/node_modules/agent-base/dist/index.js
-var exports_dist = {};
-__export(exports_dist, {
-  Agent: () => Agent4
-});
-import * as net from "net";
-import * as http3 from "http";
-import { Agent as HttpsAgent } from "https";
-var INTERNAL, Agent4;
-var init_dist = __esm(() => {
-  init_helpers();
-  INTERNAL = Symbol("AgentBaseInternalState");
-  Agent4 = class Agent4 extends http3.Agent {
-    constructor(opts) {
-      super(opts);
-      this[INTERNAL] = {};
-    }
-    isSecureEndpoint(options) {
-      if (options) {
-        if (typeof options.secureEndpoint === "boolean") {
-          return options.secureEndpoint;
-        }
-        if (typeof options.protocol === "string") {
-          return options.protocol === "https:";
-        }
-      }
-      const { stack } = new Error;
-      if (typeof stack !== "string")
-        return false;
-      return stack.split(`
-`).some((l) => l.indexOf("(https.js:") !== -1 || l.indexOf("node:https:") !== -1);
-    }
-    incrementSockets(name) {
-      if (this.maxSockets === Infinity && this.maxTotalSockets === Infinity) {
-        return null;
-      }
-      if (!this.sockets[name]) {
-        this.sockets[name] = [];
-      }
-      const fakeSocket = new net.Socket({ writable: false });
-      this.sockets[name].push(fakeSocket);
-      this.totalSocketCount++;
-      return fakeSocket;
-    }
-    decrementSockets(name, socket) {
-      if (!this.sockets[name] || socket === null) {
-        return;
-      }
-      const sockets = this.sockets[name];
-      const index = sockets.indexOf(socket);
-      if (index !== -1) {
-        sockets.splice(index, 1);
-        this.totalSocketCount--;
-        if (sockets.length === 0) {
-          delete this.sockets[name];
-        }
-      }
-    }
-    getName(options) {
-      const secureEndpoint = this.isSecureEndpoint(options);
-      if (secureEndpoint) {
-        return HttpsAgent.prototype.getName.call(this, options);
-      }
-      return super.getName(options);
-    }
-    createSocket(req, options, cb) {
-      const connectOpts = {
-        ...options,
-        secureEndpoint: this.isSecureEndpoint(options)
-      };
-      const name = this.getName(connectOpts);
-      const fakeSocket = this.incrementSockets(name);
-      Promise.resolve().then(() => this.connect(req, connectOpts)).then((socket) => {
-        this.decrementSockets(name, fakeSocket);
-        if (typeof socket.addRequest === "function") {
-          try {
-            return socket.addRequest(req, connectOpts);
-          } catch (err) {
-            return cb(err);
-          }
-        }
-        this[INTERNAL].currentSocket = socket;
-        super.createSocket(req, options, cb);
-      }, (err) => {
-        this.decrementSockets(name, fakeSocket);
-        cb(err);
-      });
-    }
-    createConnection() {
-      const socket = this[INTERNAL].currentSocket;
-      this[INTERNAL].currentSocket = undefined;
-      if (!socket) {
-        throw new Error("No socket was returned in the `connect()` function");
-      }
-      return socket;
-    }
-    get defaultPort() {
-      return this[INTERNAL].defaultPort ?? (this.protocol === "https:" ? 443 : 80);
-    }
-    set defaultPort(v) {
-      if (this[INTERNAL]) {
-        this[INTERNAL].defaultPort = v;
-      }
-    }
-    get protocol() {
-      return this[INTERNAL].protocol ?? (this.isSecureEndpoint() ? "https:" : "http:");
-    }
-    set protocol(v) {
-      if (this[INTERNAL]) {
-        this[INTERNAL].protocol = v;
-      }
-    }
-  };
-});
-
-// node_modules/proxy-agent-negotiate/dist/index.js
-function createNegotiateAuth() {
-  return async ({ response, scheme }) => {
-    if (scheme.toLowerCase() !== "negotiate") {
-      throw new Error(`Expected Negotiate scheme but got "${scheme}"`);
-    }
-    let kerberos;
-    try {
-      kerberos = await import("kerberos");
-    } catch {
-      throw new Error('The "kerberos" package is required for Negotiate proxy authentication. Install it with: npm install kerberos');
-    }
-    const proxyAuthenticate = response.headers["proxy-authenticate"] || "";
-    const challengeHeader = Array.isArray(proxyAuthenticate) ? proxyAuthenticate[0] : proxyAuthenticate;
-    const serverToken = typeof challengeHeader === "string" && challengeHeader.includes(" ") ? challengeHeader.split(" ").slice(1).join(" ") : undefined;
-    const client = await kerberos.initializeClient("HTTP@proxy", {
-      mechOID: kerberos.GSS_MECH_OID_SPNEGO
-    });
-    const token = await client.step(serverToken || "");
-    if (!token) {
-      throw new Error("Kerberos client.step() returned no token");
-    }
-    return {
-      headers: {
-        "Proxy-Authorization": `Negotiate ${token}`
-      }
-    };
-  };
-}
-
-// node_modules/@npmcli/agent/node_modules/http-proxy-agent/dist/index.js
-var exports_dist2 = {};
-__export(exports_dist2, {
-  HttpProxyAgent: () => HttpProxyAgent2
-});
-import * as net2 from "net";
-import * as tls from "tls";
-import { once } from "events";
-import { URL as URL3 } from "url";
-function omit2(obj, ...keys) {
-  const ret = {};
-  let key;
-  for (key in obj) {
-    if (!keys.includes(key)) {
-      ret[key] = obj[key];
-    }
-  }
-  return ret;
-}
-var import_debug2, debug2, HttpProxyAgent2;
-var init_dist2 = __esm(() => {
-  init_dist();
-  import_debug2 = __toESM(require_src(), 1);
-  debug2 = import_debug2.default("http-proxy-agent");
-  HttpProxyAgent2 = class HttpProxyAgent2 extends Agent4 {
-    constructor(proxy, opts) {
-      super(opts);
-      this.proxy = typeof proxy === "string" ? new URL3(proxy) : proxy;
-      this.proxyHeaders = opts?.headers ?? {};
-      debug2("Creating new HttpProxyAgent instance: %o", this.proxy.href);
-      if (opts?.negotiate) {
-        this.onProxyAuth = createNegotiateAuth();
-      } else if (opts?.onProxyAuth) {
-        this.onProxyAuth = opts.onProxyAuth;
-      }
-      const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, "");
-      const port = this.proxy.port ? parseInt(this.proxy.port, 10) : this.proxy.protocol === "https:" ? 443 : 80;
-      this.connectOpts = {
-        ...opts ? omit2(opts, "headers", "onProxyAuth", "negotiate") : null,
-        host,
-        port
-      };
-    }
-    addRequest(req, opts) {
-      req._header = null;
-      this.setRequestProps(req, opts);
-      super.addRequest(req, opts);
-    }
-    setRequestProps(req, opts) {
-      const { proxy } = this;
-      const protocol = opts.secureEndpoint ? "https:" : "http:";
-      const hostname = req.getHeader("host") || "localhost";
-      const base = `${protocol}//${hostname}`;
-      const url = new URL3(req.path, base);
-      if (opts.port !== 80) {
-        url.port = String(opts.port);
-      }
-      req.path = String(url);
-      const headers = typeof this.proxyHeaders === "function" ? this.proxyHeaders() : { ...this.proxyHeaders };
-      if (proxy.username || proxy.password) {
-        const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
-        headers["Proxy-Authorization"] = `Basic ${Buffer.from(auth).toString("base64")}`;
-      }
-      if (!headers["Proxy-Connection"]) {
-        headers["Proxy-Connection"] = this.keepAlive ? "Keep-Alive" : "close";
-      }
-      for (const name of Object.keys(headers)) {
-        const value = headers[name];
-        if (value) {
-          req.setHeader(name, value);
-        }
-      }
-    }
-    async connect(req, opts) {
-      req._header = null;
-      if (!req.path.includes("://")) {
-        this.setRequestProps(req, opts);
-      }
-      let first;
-      let endOfHeaders;
-      debug2("Regenerating stored HTTP header string for request");
-      req._implicitHeader();
-      if (req.outputData && req.outputData.length > 0) {
-        debug2("Patching connection write() output buffer with updated header");
-        first = req.outputData[0].data;
-        endOfHeaders = first.indexOf(`\r
-\r
-`) + 4;
-        req.outputData[0].data = req._header + first.substring(endOfHeaders);
-        debug2("Output buffer: %o", req.outputData[0].data);
-      }
-      let socket;
-      if (this.proxy.protocol === "https:") {
-        debug2("Creating `tls.Socket`: %o", this.connectOpts);
-        socket = tls.connect(this.connectOpts);
-      } else {
-        debug2("Creating `net.Socket`: %o", this.connectOpts);
-        socket = net2.connect(this.connectOpts);
-      }
-      await once(socket, "connect");
-      const connect3 = { socket };
-      req.emit("proxyConnect", connect3);
-      this.emit("proxyConnect", connect3, req);
-      req.emit("proxy", { proxy: this.proxy.href, socket });
-      return socket;
-    }
-  };
-  HttpProxyAgent2.protocols = ["http", "https"];
-});
-
-// node_modules/@npmcli/agent/node_modules/https-proxy-agent/dist/parse-proxy-response.js
-function parseProxyResponse(socket) {
-  return new Promise((resolve, reject) => {
-    let buffersLength = 0;
-    const buffers = [];
-    function read() {
-      const b = socket.read();
-      if (b)
-        ondata(b);
-      else
-        socket.once("readable", read);
-    }
-    function cleanup() {
-      socket.removeListener("end", onend);
-      socket.removeListener("error", onerror);
-      socket.removeListener("readable", read);
-    }
-    function onend() {
-      cleanup();
-      debug3("onend");
-      reject(new Error("Proxy connection ended before receiving CONNECT response"));
-    }
-    function onerror(err) {
-      cleanup();
-      debug3("onerror %o", err);
-      reject(err);
-    }
-    function ondata(b) {
-      buffers.push(b);
-      buffersLength += b.length;
-      const buffered = Buffer.concat(buffers, buffersLength);
-      const endOfHeaders = buffered.indexOf(`\r
-\r
-`);
-      if (endOfHeaders === -1) {
-        debug3("have not received end of HTTP headers yet...");
-        read();
-        return;
-      }
-      const headerParts = buffered.slice(0, endOfHeaders).toString("ascii").split(`\r
-`);
-      const firstLine = headerParts.shift();
-      if (!firstLine) {
-        socket.destroy();
-        return reject(new Error("No header received from proxy CONNECT response"));
-      }
-      const firstLineParts = firstLine.split(" ");
-      const statusCode = +firstLineParts[1];
-      const statusText = firstLineParts.slice(2).join(" ");
-      const headers = {};
-      for (const header of headerParts) {
-        if (!header)
-          continue;
-        const firstColon = header.indexOf(":");
-        if (firstColon === -1) {
-          socket.destroy();
-          return reject(new Error(`Invalid header from proxy CONNECT response: "${header}"`));
-        }
-        const key = header.slice(0, firstColon).toLowerCase();
-        const value = header.slice(firstColon + 1).trimStart();
-        const current = headers[key];
-        if (typeof current === "string") {
-          headers[key] = [current, value];
-        } else if (Array.isArray(current)) {
-          current.push(value);
-        } else {
-          headers[key] = value;
-        }
-      }
-      debug3("got proxy server response: %o %o", firstLine, headers);
-      cleanup();
-      resolve({
-        connect: {
-          statusCode,
-          statusText,
-          headers
-        },
-        buffered
-      });
-    }
-    socket.on("error", onerror);
-    socket.on("end", onend);
-    read();
-  });
-}
-var import_debug3, debug3;
-var init_parse_proxy_response = __esm(() => {
-  import_debug3 = __toESM(require_src(), 1);
-  debug3 = import_debug3.default("https-proxy-agent:parse-proxy-response");
-});
-
-// node_modules/@npmcli/agent/node_modules/https-proxy-agent/dist/index.js
-var exports_dist3 = {};
-__export(exports_dist3, {
-  HttpsProxyAgent: () => HttpsProxyAgent2
-});
-import * as net3 from "net";
-import * as tls2 from "tls";
-import assert4 from "assert";
-import { URL as URL4 } from "url";
-function resume(socket) {
-  setImmediate(() => {
-    socket.resume();
-  });
-}
-function omit3(obj, ...keys) {
-  const ret = {};
-  let key;
-  for (key in obj) {
-    if (!keys.includes(key)) {
-      ret[key] = obj[key];
-    }
-  }
-  return ret;
-}
-var import_debug4, debug4, setServernameFromNonIpHost = (options) => {
-  if (options.servername === undefined && options.host && !net3.isIP(options.host)) {
-    return {
-      ...options,
-      servername: options.host
-    };
-  }
-  return options;
-}, HttpsProxyAgent2;
-var init_dist3 = __esm(() => {
-  init_dist();
-  init_parse_proxy_response();
-  import_debug4 = __toESM(require_src(), 1);
-  debug4 = import_debug4.default("https-proxy-agent");
-  HttpsProxyAgent2 = class HttpsProxyAgent2 extends Agent4 {
-    constructor(proxy, opts) {
-      super(opts);
-      this.options = { path: undefined };
-      this.proxy = typeof proxy === "string" ? new URL4(proxy) : proxy;
-      this.proxyHeaders = opts?.headers ?? {};
-      debug4("Creating new HttpsProxyAgent instance: %o", this.proxy.href);
-      if (opts?.negotiate) {
-        this.onProxyAuth = createNegotiateAuth();
-      } else if (opts?.onProxyAuth) {
-        this.onProxyAuth = opts.onProxyAuth;
-      }
-      const host = (this.proxy.hostname || this.proxy.host).replace(/^\[|\]$/g, "");
-      const port = this.proxy.port ? parseInt(this.proxy.port, 10) : this.proxy.protocol === "https:" ? 443 : 80;
-      this.connectOpts = {
-        ALPNProtocols: ["http/1.1"],
-        ...opts ? omit3(opts, "headers", "onProxyAuth", "negotiate") : null,
-        host,
-        port
-      };
-    }
-    async connect(req, opts) {
-      const { proxy } = this;
-      if (!opts.host) {
-        throw new TypeError('No "host" provided');
-      }
-      let socket;
-      if (proxy.protocol === "https:") {
-        debug4("Creating `tls.Socket`: %o", this.connectOpts);
-        socket = tls2.connect(setServernameFromNonIpHost(this.connectOpts));
-      } else {
-        debug4("Creating `net.Socket`: %o", this.connectOpts);
-        socket = net3.connect(this.connectOpts);
-      }
-      const headers = typeof this.proxyHeaders === "function" ? this.proxyHeaders() : { ...this.proxyHeaders };
-      const host = net3.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
-      let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r
-`;
-      if (proxy.username || proxy.password) {
-        const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
-        headers["Proxy-Authorization"] = `Basic ${Buffer.from(auth).toString("base64")}`;
-      }
-      headers.Host = `${host}:${opts.port}`;
-      if (!headers["Proxy-Connection"]) {
-        headers["Proxy-Connection"] = this.keepAlive ? "Keep-Alive" : "close";
-      }
-      for (const name of Object.keys(headers)) {
-        payload += `${name}: ${headers[name]}\r
-`;
-      }
-      const proxyResponsePromise = parseProxyResponse(socket);
-      socket.write(`${payload}\r
-`);
-      const { connect, buffered } = await proxyResponsePromise;
-      req.emit("proxyConnect", connect);
-      this.emit("proxyConnect", connect, req);
-      req.emit("proxy", { proxy: this.proxy.href, socket });
-      if (connect.statusCode === 200) {
-        req.once("socket", resume);
-        if (opts.secureEndpoint) {
-          debug4("Upgrading socket connection to TLS");
-          return tls2.connect({
-            ...omit3(setServernameFromNonIpHost(opts), "host", "path", "port"),
-            socket
-          });
-        }
-        return socket;
-      }
-      if (connect.statusCode === 407 && this.onProxyAuth) {
-        debug4("Got 407 response, invoking onProxyAuth callback");
-        socket.destroy();
-        const proxyAuthenticate = connect.headers["proxy-authenticate"] || "";
-        const scheme = Array.isArray(proxyAuthenticate) ? proxyAuthenticate[0].split(/\s/)[0] : proxyAuthenticate.split(/\s/)[0];
-        const authResponse = await this.onProxyAuth({
-          response: connect,
-          scheme
-        });
-        return this._connectWithAuth(req, opts, authResponse.headers);
-      }
-      socket.destroy();
-      const fakeSocket = new net3.Socket({ writable: false });
-      fakeSocket.readable = true;
-      req.once("socket", (s) => {
-        debug4("Replaying proxy buffer for failed request");
-        assert4(s.listenerCount("data") > 0);
-        s.push(buffered);
-        s.push(null);
-      });
-      return fakeSocket;
-    }
-    async _connectWithAuth(req, opts, authHeaders) {
-      const { proxy } = this;
-      let socket;
-      if (proxy.protocol === "https:") {
-        socket = tls2.connect(setServernameFromNonIpHost(this.connectOpts));
-      } else {
-        socket = net3.connect(this.connectOpts);
-      }
-      const headers = typeof this.proxyHeaders === "function" ? this.proxyHeaders() : { ...this.proxyHeaders };
-      const host = net3.isIPv6(opts.host) ? `[${opts.host}]` : opts.host;
-      let payload = `CONNECT ${host}:${opts.port} HTTP/1.1\r
-`;
-      if (proxy.username || proxy.password) {
-        const auth = `${decodeURIComponent(proxy.username)}:${decodeURIComponent(proxy.password)}`;
-        headers["Proxy-Authorization"] = `Basic ${Buffer.from(auth).toString("base64")}`;
-      }
-      Object.assign(headers, authHeaders);
-      headers.Host = `${host}:${opts.port}`;
-      if (!headers["Proxy-Connection"]) {
-        headers["Proxy-Connection"] = this.keepAlive ? "Keep-Alive" : "close";
-      }
-      for (const name of Object.keys(headers)) {
-        payload += `${name}: ${headers[name]}\r
-`;
-      }
-      const proxyResponsePromise = parseProxyResponse(socket);
-      socket.write(`${payload}\r
-`);
-      const { connect } = await proxyResponsePromise;
-      req.emit("proxyConnect", connect);
-      this.emit("proxyConnect", connect, req);
-      if (connect.statusCode === 200) {
-        req.once("socket", resume);
-        if (opts.secureEndpoint) {
-          debug4("Upgrading socket connection to TLS");
-          return tls2.connect({
-            ...omit3(setServernameFromNonIpHost(opts), "host", "path", "port"),
-            socket
-          });
-        }
-        return socket;
-      }
-      socket.destroy();
-      throw new Error(`Proxy authentication failed with status ${connect.statusCode} after retry`);
-    }
-  };
-  HttpsProxyAgent2.protocols = ["http", "https"];
-});
-
 // node_modules/smart-buffer/build/utils.js
 var require_utils3 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
@@ -47259,7 +46657,7 @@ var require_constants10 = __commonJS(function(exports) {
 });
 
 // node_modules/ip-address/dist/v6/helpers.js
-var require_helpers2 = __commonJS(function(exports) {
+var require_helpers = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.escapeHtml = escapeHtml;
   exports.spanAllZeroes = spanAllZeroes;
@@ -47427,7 +46825,7 @@ var require_ipv6 = __commonJS(function(exports) {
   var common = __importStar(require_common2());
   var constants4 = __importStar(require_constants9());
   var constants6 = __importStar(require_constants10());
-  var helpers = __importStar(require_helpers2());
+  var helpers = __importStar(require_helpers());
   var ipv4_1 = require_ipv4();
   var regular_expressions_1 = require_regular_expressions();
   var address_error_1 = require_address_error();
@@ -48281,12 +47679,12 @@ var require_ip_address = __commonJS(function(exports) {
   Object.defineProperty(exports, "AddressError", { enumerable: true, get: function() {
     return address_error_1.AddressError;
   } });
-  var helpers = __importStar(require_helpers2());
+  var helpers = __importStar(require_helpers());
   exports.v6 = { helpers };
 });
 
 // node_modules/socks/build/common/helpers.js
-var require_helpers3 = __commonJS(function(exports) {
+var require_helpers2 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.validateSocksClientOptions = validateSocksClientOptions;
   exports.validateSocksClientChainOptions = validateSocksClientChainOptions;
@@ -48469,7 +47867,7 @@ var require_socksclient = __commonJS(function(exports) {
   var net = __require("net");
   var smart_buffer_1 = require_smartbuffer();
   var constants_1 = require_constants8();
-  var helpers_1 = require_helpers3();
+  var helpers_1 = require_helpers2();
   var receivebuffer_1 = require_receivebuffer();
   var util_1 = require_util10();
   Object.defineProperty(exports, "SocksClientError", { enumerable: true, get: function() {
@@ -49038,127 +48436,13 @@ var require_build2 = __commonJS(function(exports) {
   __exportStar(require_socksclient(), exports);
 });
 
-// node_modules/socks-proxy-agent/node_modules/agent-base/dist/helpers.js
-var init_helpers2 = () => {};
-
-// node_modules/socks-proxy-agent/node_modules/agent-base/dist/index.js
-import * as net4 from "net";
-import * as http4 from "http";
-import { Agent as HttpsAgent2 } from "https";
-var INTERNAL2, Agent6;
-var init_dist4 = __esm(() => {
-  init_helpers2();
-  INTERNAL2 = Symbol("AgentBaseInternalState");
-  Agent6 = class Agent6 extends http4.Agent {
-    constructor(opts) {
-      super(opts);
-      this[INTERNAL2] = {};
-    }
-    isSecureEndpoint(options) {
-      if (options) {
-        if (typeof options.secureEndpoint === "boolean") {
-          return options.secureEndpoint;
-        }
-        if (typeof options.protocol === "string") {
-          return options.protocol === "https:";
-        }
-      }
-      const { stack } = new Error;
-      if (typeof stack !== "string")
-        return false;
-      return stack.split(`
-`).some((l) => l.indexOf("(https.js:") !== -1 || l.indexOf("node:https:") !== -1);
-    }
-    incrementSockets(name) {
-      if (this.maxSockets === Infinity && this.maxTotalSockets === Infinity) {
-        return null;
-      }
-      if (!this.sockets[name]) {
-        this.sockets[name] = [];
-      }
-      const fakeSocket = new net4.Socket({ writable: false });
-      this.sockets[name].push(fakeSocket);
-      this.totalSocketCount++;
-      return fakeSocket;
-    }
-    decrementSockets(name, socket) {
-      if (!this.sockets[name] || socket === null) {
-        return;
-      }
-      const sockets = this.sockets[name];
-      const index = sockets.indexOf(socket);
-      if (index !== -1) {
-        sockets.splice(index, 1);
-        this.totalSocketCount--;
-        if (sockets.length === 0) {
-          delete this.sockets[name];
-        }
-      }
-    }
-    getName(options) {
-      const secureEndpoint = this.isSecureEndpoint(options);
-      if (secureEndpoint) {
-        return HttpsAgent2.prototype.getName.call(this, options);
-      }
-      return super.getName(options);
-    }
-    createSocket(req, options, cb) {
-      const connectOpts = {
-        ...options,
-        secureEndpoint: this.isSecureEndpoint(options)
-      };
-      const name = this.getName(connectOpts);
-      const fakeSocket = this.incrementSockets(name);
-      Promise.resolve().then(() => this.connect(req, connectOpts)).then((socket) => {
-        this.decrementSockets(name, fakeSocket);
-        if (typeof socket.addRequest === "function") {
-          try {
-            return socket.addRequest(req, connectOpts);
-          } catch (err) {
-            return cb(err);
-          }
-        }
-        this[INTERNAL2].currentSocket = socket;
-        super.createSocket(req, options, cb);
-      }, (err) => {
-        this.decrementSockets(name, fakeSocket);
-        cb(err);
-      });
-    }
-    createConnection() {
-      const socket = this[INTERNAL2].currentSocket;
-      this[INTERNAL2].currentSocket = undefined;
-      if (!socket) {
-        throw new Error("No socket was returned in the `connect()` function");
-      }
-      return socket;
-    }
-    get defaultPort() {
-      return this[INTERNAL2].defaultPort ?? (this.protocol === "https:" ? 443 : 80);
-    }
-    set defaultPort(v) {
-      if (this[INTERNAL2]) {
-        this[INTERNAL2].defaultPort = v;
-      }
-    }
-    get protocol() {
-      return this[INTERNAL2].protocol ?? (this.isSecureEndpoint() ? "https:" : "http:");
-    }
-    set protocol(v) {
-      if (this[INTERNAL2]) {
-        this[INTERNAL2].protocol = v;
-      }
-    }
-  };
-});
-
 // node_modules/socks-proxy-agent/dist/index.js
 var exports_dist4 = {};
 __export(exports_dist4, {
   SocksProxyAgent: () => SocksProxyAgent
 });
 import * as dns from "dns";
-import * as net5 from "net";
+import * as net4 from "net";
 import * as tls3 from "tls";
 import { URL as URL5 } from "url";
 function parseSocksURL(url) {
@@ -49217,7 +48501,7 @@ function omit4(obj, ...keys) {
   return ret;
 }
 var import_socks, import_debug5, debug5, setServernameFromNonIpHost2 = (options) => {
-  if (options.servername === undefined && options.host && !net5.isIP(options.host)) {
+  if (options.servername === undefined && options.host && !net4.isIP(options.host)) {
     return {
       ...options,
       servername: options.host
@@ -49225,12 +48509,12 @@ var import_socks, import_debug5, debug5, setServernameFromNonIpHost2 = (options)
   }
   return options;
 }, SocksProxyAgent;
-var init_dist5 = __esm(() => {
-  init_dist4();
+var init_dist4 = __esm(() => {
+  init_dist();
   import_socks = __toESM(require_build2(), 1);
   import_debug5 = __toESM(require_src(), 1);
   debug5 = import_debug5.default("socks-proxy-agent");
-  SocksProxyAgent = class SocksProxyAgent extends Agent6 {
+  SocksProxyAgent = class SocksProxyAgent extends Agent4 {
     constructor(uri, opts) {
       super(opts);
       const url = typeof uri === "string" ? new URL5(uri) : uri;
@@ -49371,9 +48655,9 @@ var require_errors4 = __commonJS(function(exports, module) {
 
 // node_modules/@npmcli/agent/lib/proxy.js
 var require_proxy2 = __commonJS(function(exports, module) {
-  var { HttpProxyAgent } = (init_dist2(), __toCommonJS(exports_dist2));
-  var { HttpsProxyAgent } = (init_dist3(), __toCommonJS(exports_dist3));
-  var { SocksProxyAgent } = (init_dist5(), __toCommonJS(exports_dist4));
+  var { HttpProxyAgent } = (init_dist3(), __toCommonJS(exports_dist3));
+  var { HttpsProxyAgent } = (init_dist2(), __toCommonJS(exports_dist2));
+  var { SocksProxyAgent } = (init_dist4(), __toCommonJS(exports_dist4));
   var { LRUCache } = require_index_min();
   var { InvalidProxyProtocolError } = require_errors4();
   var PROXY_CACHE = new LRUCache({ max: 20 });
@@ -50886,7 +50170,7 @@ var require_rekor_v2 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.RekorV2 = undefined;
   var fetch_1 = require_fetch3();
-  var protobuf_specs_1 = require_dist4();
+  var protobuf_specs_1 = require_dist();
   var v2_1 = require_v2();
 
   class RekorV2 {
@@ -50990,8 +50274,8 @@ var require_entry3 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.toProposedEntry = toProposedEntry;
   exports.toCreateEntryRequest = toCreateEntryRequest;
-  var bundle_1 = require_dist5();
-  var protobuf_specs_1 = require_dist4();
+  var bundle_1 = require_dist2();
+  var protobuf_specs_1 = require_dist();
   var util_1 = require_util9();
   var SHA256_ALGORITHM = "sha256";
   function toProposedEntry(content, publicKey, entryType = "dsse") {
@@ -51331,7 +50615,7 @@ var require_witness = __commonJS(function(exports) {
 var require_config = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.bundleBuilderFromSigningConfig = bundleBuilderFromSigningConfig;
-  var protobuf_specs_1 = require_dist4();
+  var protobuf_specs_1 = require_dist();
   var dsse_1 = require_dsse2();
   var message_1 = require_message();
   var signer_1 = require_signer();
@@ -51503,7 +50787,7 @@ var require_identity = __commonJS(function(exports) {
 });
 
 // node_modules/@sigstore/sign/dist/index.js
-var require_dist8 = __commonJS(function(exports) {
+var require_dist5 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.TSAWitness = exports.RekorWitness = exports.DEFAULT_REKOR_URL = exports.FulcioSigner = exports.DEFAULT_FULCIO_URL = exports.CIContextProvider = exports.InternalError = exports.bundleBuilderFromSigningConfig = exports.MessageSignatureBundleBuilder = exports.DSSEBundleBuilder = undefined;
   var bundler_1 = require_bundler();
@@ -54961,7 +54245,7 @@ var require_metadata = __commonJS(function(exports) {
 });
 
 // node_modules/@tufjs/models/dist/index.js
-var require_dist9 = __commonJS(function(exports) {
+var require_dist6 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.Timestamp = exports.Targets = exports.Snapshot = exports.Signature = exports.Root = exports.Metadata = exports.Key = exports.TargetFile = exports.MetaFile = exports.ValueError = exports.MetadataKind = undefined;
   var base_1 = require_base2();
@@ -55272,7 +54556,7 @@ var require_config2 = __commonJS(function(exports) {
 var require_store = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.TrustedMetadataStore = undefined;
-  var models_1 = require_dist9();
+  var models_1 = require_dist6();
   var error_1 = require_error7();
 
   class TrustedMetadataStore {
@@ -55509,7 +54793,7 @@ var require_updater = __commonJS(function(exports) {
   };
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.Updater = undefined;
-  var models_1 = require_dist9();
+  var models_1 = require_dist6();
   var debug_1 = __importDefault(require_src());
   var fs = __importStar(__require("fs"));
   var path = __importStar(__require("path"));
@@ -55767,10 +55051,10 @@ var require_updater = __commonJS(function(exports) {
 });
 
 // node_modules/tuf-js/dist/index.js
-var require_dist10 = __commonJS(function(exports) {
+var require_dist7 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.Updater = exports.BaseFetcher = exports.TargetFile = undefined;
-  var models_1 = require_dist9();
+  var models_1 = require_dist6();
   Object.defineProperty(exports, "TargetFile", { enumerable: true, get: function() {
     return models_1.TargetFile;
   } });
@@ -55919,8 +55203,8 @@ var require_client4 = __commonJS(function(exports) {
   exports.TUFClient = undefined;
   var fs_1 = __importDefault(__require("fs"));
   var path_1 = __importDefault(__require("path"));
-  var tuf_js_1 = require_dist10();
-  var _1 = require_dist11();
+  var tuf_js_1 = require_dist7();
+  var _1 = require_dist8();
   var package_json_1 = require_package7();
   var target_1 = require_target();
   var TARGETS_DIR_NAME = "targets";
@@ -56002,12 +55286,12 @@ var require_client4 = __commonJS(function(exports) {
 });
 
 // node_modules/@sigstore/tuf/dist/index.js
-var require_dist11 = __commonJS(function(exports) {
+var require_dist8 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.TUFError = exports.DEFAULT_MIRROR_URL = undefined;
   exports.getTrustedRoot = getTrustedRoot;
   exports.initTUF = initTUF;
-  var protobuf_specs_1 = require_dist4();
+  var protobuf_specs_1 = require_dist();
   var appdata_1 = require_appdata();
   var client_1 = require_client4();
   exports.DEFAULT_MIRROR_URL = "https://tuf-repo-cdn.sigstore.dev";
@@ -56045,7 +55329,7 @@ var require_dist11 = __commonJS(function(exports) {
 var require_dsse4 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.DSSESignatureContent = undefined;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
 
   class DSSESignatureContent {
     env;
@@ -56078,8 +55362,8 @@ var require_dsse4 = __commonJS(function(exports) {
 var require_message2 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.MessageSignatureContent = undefined;
-  var core_1 = require_dist6();
-  var protobuf_specs_1 = require_dist4();
+  var core_1 = require_dist3();
+  var protobuf_specs_1 = require_dist();
   var HASH_ALGORITHM_MAP = {
     [protobuf_specs_1.HashAlgorithm.HASH_ALGORITHM_UNSPECIFIED]: "sha256",
     [protobuf_specs_1.HashAlgorithm.SHA2_256]: "sha256",
@@ -56121,7 +55405,7 @@ var require_bundle3 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.toSignedEntity = toSignedEntity;
   exports.signatureContent = signatureContent;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   var dsse_1 = require_dsse4();
   var message_1 = require_message2();
   function toSignedEntity(bundle, artifact) {
@@ -56227,8 +55511,8 @@ var require_trust = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.filterTLogAuthorities = exports.filterCertAuthorities = undefined;
   exports.toTrustMaterial = toTrustMaterial;
-  var core_1 = require_dist6();
-  var protobuf_specs_1 = require_dist4();
+  var core_1 = require_dist3();
+  var protobuf_specs_1 = require_dist();
   var error_1 = require_error9();
   var BEGINNING_OF_TIME = new Date(0);
   var END_OF_TIME = new Date(8640000000000000);
@@ -56469,7 +55753,7 @@ var require_certificate = __commonJS(function(exports) {
 var require_sct2 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.verifySCTs = verifySCTs;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   var error_1 = require_error9();
   var trust_1 = require_trust();
   function verifySCTs(cert, issuer, ctlogs) {
@@ -56517,7 +55801,7 @@ var require_key4 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.verifyPublicKey = verifyPublicKey;
   exports.verifyCertificate = verifyCertificate;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   var error_1 = require_error9();
   var certificate_1 = require_certificate();
   var sct_1 = require_sct2();
@@ -56622,7 +55906,7 @@ var require_policy2 = __commonJS(function(exports) {
 var require_tsa3 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.verifyRFC3161Timestamp = verifyRFC3161Timestamp;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   var error_1 = require_error9();
   var certificate_1 = require_certificate();
   var trust_1 = require_trust();
@@ -56897,7 +56181,7 @@ var require_checkpoint = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.LogCheckpoint = undefined;
   exports.verifyCheckpoint = verifyCheckpoint;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   var error_1 = require_error9();
   var CHECKPOINT_SEPARATOR = `
 
@@ -57011,7 +56295,7 @@ var require_checkpoint = __commonJS(function(exports) {
 var require_merkle = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.verifyMerkleInclusion = verifyMerkleInclusion;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   var error_1 = require_error9();
   var RFC6962_LEAF_HASH_PREFIX = Buffer.from([0]);
   var RFC6962_NODE_HASH_PREFIX = Buffer.from([1]);
@@ -57092,7 +56376,7 @@ var require_merkle = __commonJS(function(exports) {
 var require_set = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.verifyTLogSET = verifyTLogSET;
-  var core_1 = require_dist6();
+  var core_1 = require_dist3();
   var error_1 = require_error9();
   var trust_1 = require_trust();
   function verifyTLogSET(entry, tlogs) {
@@ -57349,7 +56633,7 @@ var require_verifier2 = __commonJS(function(exports) {
 });
 
 // node_modules/@sigstore/verify/dist/index.js
-var require_dist12 = __commonJS(function(exports) {
+var require_dist9 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.Verifier = exports.toTrustMaterial = exports.VerificationError = exports.PolicyError = exports.toSignedEntity = undefined;
   var bundle_1 = require_bundle3();
@@ -57380,9 +56664,9 @@ var require_config3 = __commonJS(function(exports) {
   exports.createBundleBuilder = createBundleBuilder;
   exports.createKeyFinder = createKeyFinder;
   exports.createVerificationPolicy = createVerificationPolicy;
-  var core_1 = require_dist6();
-  var sign_1 = require_dist8();
-  var verify_1 = require_dist12();
+  var core_1 = require_dist3();
+  var sign_1 = require_dist5();
+  var verify_1 = require_dist9();
   exports.DEFAULT_RETRY = { retries: 2 };
   exports.DEFAULT_TIMEOUT = 5000;
   function createBundleBuilder(bundleType, options) {
@@ -57527,9 +56811,9 @@ var require_sigstore = __commonJS(function(exports) {
   exports.attest = attest;
   exports.verify = verify;
   exports.createVerifier = createVerifier;
-  var bundle_1 = require_dist5();
-  var tuf = __importStar(require_dist11());
-  var verify_1 = require_dist12();
+  var bundle_1 = require_dist2();
+  var tuf = __importStar(require_dist8());
+  var verify_1 = require_dist9();
   var config = __importStar(require_config3());
   async function sign(payload, options = {}) {
     const bundler = config.createBundleBuilder("messageSignature", options);
@@ -57579,14 +56863,14 @@ var require_sigstore = __commonJS(function(exports) {
 });
 
 // node_modules/sigstore/dist/index.js
-var require_dist13 = __commonJS(function(exports) {
+var require_dist10 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.verify = exports.sign = exports.createVerifier = exports.attest = exports.VerificationError = exports.PolicyError = exports.TUFError = exports.InternalError = exports.DEFAULT_REKOR_URL = exports.DEFAULT_FULCIO_URL = exports.ValidationError = undefined;
-  var bundle_1 = require_dist5();
+  var bundle_1 = require_dist2();
   Object.defineProperty(exports, "ValidationError", { enumerable: true, get: function() {
     return bundle_1.ValidationError;
   } });
-  var sign_1 = require_dist8();
+  var sign_1 = require_dist5();
   Object.defineProperty(exports, "DEFAULT_FULCIO_URL", { enumerable: true, get: function() {
     return sign_1.DEFAULT_FULCIO_URL;
   } });
@@ -57596,11 +56880,11 @@ var require_dist13 = __commonJS(function(exports) {
   Object.defineProperty(exports, "InternalError", { enumerable: true, get: function() {
     return sign_1.InternalError;
   } });
-  var tuf_1 = require_dist11();
+  var tuf_1 = require_dist8();
   Object.defineProperty(exports, "TUFError", { enumerable: true, get: function() {
     return tuf_1.TUFError;
   } });
-  var verify_1 = require_dist12();
+  var verify_1 = require_dist9();
   Object.defineProperty(exports, "PolicyError", { enumerable: true, get: function() {
     return verify_1.PolicyError;
   } });
@@ -62756,7 +62040,7 @@ function getRuntimeToken() {
 
 // node_modules/@actions/cache/lib/internal/cacheHttpClient.js
 import * as fs8 from "fs";
-import { URL as URL2 } from "url";
+import { URL as URL4 } from "url";
 // node_modules/@azure/core-auth/dist/esm/tokenCredential.js
 function isTokenCredential(credential) {
   const castCredential = credential;
@@ -63352,6 +62636,7 @@ var defaultAllowedHeaderNames = [
   "ms-cv",
   "return-client-request-id",
   "traceparent",
+  "azure-deprecating",
   "Access-Control-Allow-Credentials",
   "Access-Control-Allow-Headers",
   "Access-Control-Allow-Methods",
@@ -63520,15 +62805,372 @@ function stringToUint8Array(value, format) {
 import http2 from "node:http";
 import https2 from "node:https";
 import zlib from "node:zlib";
-import { Transform } from "node:stream";
+import { finished, Transform } from "node:stream";
+import { types as types2 } from "node:util";
 
 // node_modules/@typespec/ts-http-runtime/dist/esm/log.js
 var logger = createClientLogger("ts-http-runtime");
 
+// node_modules/@typespec/ts-http-runtime/dist/esm/util/requestBodyHeaders.js
+function getHeaderPairs(headers) {
+  return Array.isArray(headers[0]) ? headers : Array.from({ length: Math.ceil(headers.length / 2) }, (_, index) => [
+    headers[index * 2],
+    headers[index * 2 + 1]
+  ]);
+}
+function isIterable(value) {
+  return Symbol.iterator in value && typeof value[Symbol.iterator] === "function";
+}
+function removeContinueToken(value) {
+  if (typeof value === "string") {
+    const tokens = value.split(",");
+    const remaining = tokens.filter((token) => token.trim().toLowerCase() !== "100-continue");
+    if (remaining.length === tokens.length) {
+      return value;
+    }
+    return remaining.map((token) => token.trim()).filter(Boolean).join(", ") || undefined;
+  }
+  if (Array.isArray(value)) {
+    const remaining = value.map(removeContinueToken).filter((entry) => entry !== undefined);
+    return remaining.length > 0 ? remaining : undefined;
+  }
+  return value;
+}
+function stripRequestBodyHeaders(request, removeFraming) {
+  const stripHeaderValue = (name, value) => {
+    const lowerName = name.toLowerCase();
+    if (removeFraming && (lowerName === "content-length" || lowerName === "transfer-encoding" || lowerName === "trailer")) {
+      return;
+    }
+    return lowerName === "expect" ? removeContinueToken(value) : value;
+  };
+  const stripHeaderPairs = (pairs) => pairs.flatMap(([name, value]) => {
+    const updated = typeof name === "string" ? stripHeaderValue(name, value) : value;
+    return updated === undefined ? [] : [[name, updated]];
+  });
+  for (const [name, value] of request.headers) {
+    const updated = stripHeaderValue(name, value);
+    if (updated === undefined) {
+      request.headers.delete(name);
+    } else if (typeof updated === "string" && updated !== value) {
+      request.headers.set(name, updated);
+    }
+  }
+  const overrides = request.requestOverrides;
+  if (!overrides || !("headers" in overrides)) {
+    return;
+  }
+  const headers = overrides.headers;
+  if (Array.isArray(headers)) {
+    const updatedPairs = stripHeaderPairs(getHeaderPairs(headers));
+    request.requestOverrides = {
+      ...overrides,
+      headers: Array.isArray(headers[0]) ? updatedPairs : updatedPairs.flat()
+    };
+  } else if (headers && typeof headers === "object" && isIterable(headers)) {
+    const pairs = Array.from(headers, (entry) => {
+      if (!Array.isArray(entry) || entry.length !== 2) {
+        throw new TypeError("Header entry must be a name/value pair");
+      }
+      return entry;
+    });
+    request.requestOverrides = { ...overrides, headers: stripHeaderPairs(pairs) };
+  } else if (headers && typeof headers === "object") {
+    const updatedHeaders = {};
+    for (const [name, value] of Object.entries(headers)) {
+      const updated = stripHeaderValue(name, value);
+      if (updated !== undefined) {
+        updatedHeaders[name] = updated;
+      }
+    }
+    request.requestOverrides = { ...overrides, headers: updatedHeaders };
+  }
+}
+function removeExpectContinueHeader(request) {
+  stripRequestBodyHeaders(request, false);
+}
+function removeRequestBodyHeaders(request) {
+  stripRequestBodyHeaders(request, true);
+}
+
+// node_modules/@typespec/ts-http-runtime/dist/esm/util/nodeExpectContinue.js
+var EXPECT_CONTINUE_TIMEOUT_IN_MS = 1000;
+function getHeaderValues(headers, name) {
+  if (Array.isArray(headers)) {
+    return getHeaderPairs(headers).filter(([key]) => typeof key === "string" && key.toLowerCase() === name).flatMap(([, value]) => Array.isArray(value) ? value : [value]);
+  }
+  if (headers && typeof headers === "object") {
+    if ("get" in headers && typeof headers.get === "function") {
+      const value = headers.get(name);
+      return value === undefined || value === null ? [] : [value];
+    }
+    let value;
+    for (const [key, entry] of Object.entries(headers)) {
+      if (key.toLowerCase() === name) {
+        value = entry;
+      }
+    }
+    return value === undefined ? [] : Array.isArray(value) ? value : [value];
+  }
+  return [];
+}
+function getEffectiveHeaderValues(request, name) {
+  const headers = request.requestOverrides && "headers" in request.requestOverrides ? request.requestOverrides.headers : request.headers;
+  return getHeaderValues(headers, name.toLowerCase());
+}
+function hasExpectContinue(request) {
+  return getEffectiveHeaderValues(request, "expect").some((value) => typeof value === "string" && value.split(",").some((token) => token.trim().toLowerCase() === "100-continue"));
+}
+function addHeader(headers, name, value) {
+  if (!Array.isArray(headers)) {
+    return { ...headers, [name]: value };
+  }
+  return Array.isArray(headers[0]) ? [...headers, [name, value]] : [...headers, name, value];
+}
+function hasHeader(headers, name) {
+  if (Array.isArray(headers)) {
+    return getHeaderPairs(headers).some(([key]) => typeof key === "string" && key.toLowerCase() === name);
+  }
+  return Object.keys(headers ?? {}).some((key) => key.toLowerCase() === name);
+}
+function addExpectContinueFraming(options, bodyLength) {
+  if (hasHeader(options.headers, "content-length") || hasHeader(options.headers, "transfer-encoding")) {
+    return;
+  }
+  options.headers = addHeader(options.headers, bodyLength === null ? "Transfer-Encoding" : "Content-Length", bodyLength === null ? "chunked" : String(bodyLength));
+}
+function createExpectContinueRequest(options) {
+  let fallback;
+  let waiting = true;
+  let bodyStarted = false;
+  let errorReported = false;
+  let request;
+  let bodyError;
+  const bodyStream = options.bodyStream;
+  bodyStream?.once("error", onBodyError);
+  if (bodyStream && "errored" in bodyStream && bodyStream.errored instanceof Error) {
+    process.nextTick(onBodyError, bodyStream.errored);
+    return;
+  }
+  try {
+    request = options.createRequest(onResponse);
+  } catch (error) {
+    onError(error);
+    return;
+  }
+  function stopWaiting(keepBodyObserved = false) {
+    waiting = false;
+    if (fallback !== undefined) {
+      clearTimeout(fallback);
+      fallback = undefined;
+    }
+    request?.removeListener("continue", sendBody);
+    request?.removeListener("socket", onSocket);
+    if (!keepBodyObserved) {
+      bodyStream?.removeListener("error", onBodyError);
+    }
+  }
+  function onError(error) {
+    const requestError = error instanceof Error ? error : new Error(String(error));
+    if (!errorReported) {
+      errorReported = true;
+      stopWaiting();
+      options.onError(requestError);
+    }
+    return requestError;
+  }
+  function onBodyError(error) {
+    if (errorReported || !waiting && !bodyStarted) {
+      return;
+    }
+    errorReported = true;
+    bodyError = error instanceof Error ? error : new Error(String(error));
+    stopWaiting();
+    options.onBodyError(error);
+    request?.destroy(bodyError);
+  }
+  function sendBody() {
+    if (!waiting) {
+      return;
+    }
+    bodyStarted = true;
+    stopWaiting(true);
+    try {
+      options.sendBody(request);
+    } catch (error) {
+      onBodyError(error);
+    } finally {
+      bodyStream?.removeListener("error", onBodyError);
+    }
+  }
+  function onAbort() {
+    stopWaiting();
+    options.onAbort(request);
+  }
+  function onSocket() {
+    if (!waiting) {
+      return;
+    }
+    try {
+      request.flushHeaders();
+      if (!waiting) {
+        return;
+      }
+      request.write("", (error) => {
+        if (error) {
+          request.destroy(onError(error));
+        } else if (waiting) {
+          fallback = setTimeout(sendBody, EXPECT_CONTINUE_TIMEOUT_IN_MS);
+        }
+      });
+    } catch (error) {
+      request.destroy(onError(error));
+    }
+  }
+  function onResponse(response) {
+    stopWaiting();
+    if (!bodyStarted) {
+      request.shouldKeepAlive = false;
+      const destroyRequest = () => {
+        response.removeListener("end", destroyRequest);
+        response.removeListener("close", destroyRequest);
+        request.destroy();
+      };
+      response.once("end", destroyRequest);
+      response.once("close", destroyRequest);
+      if (response.readableEnded || response.destroyed) {
+        destroyRequest();
+      }
+    }
+    options.onResponse(response);
+  }
+  request.once("error", onError);
+  if (bodyError) {
+    request.destroy(bodyError);
+    return;
+  }
+  if (options.abortSignal.aborted) {
+    onAbort();
+    return;
+  }
+  options.abortSignal.addEventListener("abort", onAbort, { once: true });
+  request.once("close", () => stopWaiting());
+  if (request.destroyed || request.closed) {
+    stopWaiting();
+  }
+  if (!waiting) {
+    return;
+  }
+  request.once("continue", sendBody);
+  if (request.socket) {
+    onSocket();
+  } else {
+    request.once("socket", onSocket);
+  }
+}
+
+// node_modules/@typespec/ts-http-runtime/dist/esm/util/responseBody.js
+var responseBodySources = new WeakMap;
+var responseBodyDisposers = new WeakMap;
+var requestCompletions = new WeakMap;
+var responseBodyCompletions = new WeakMap;
+function setRequestCompletion(response, completion) {
+  requestCompletions.set(response, completion);
+  completion.then(() => requestCompletions.get(response) === completion && requestCompletions.delete(response)).catch((error) => {
+    logger.warning("Error tracking request completion", error);
+  });
+}
+function isNodeResponseBody(value) {
+  return typeof value === "object" && value !== null && "resume" in value && typeof value.resume === "function";
+}
+function isNodeEventEmitterBody(value) {
+  return "on" in value && typeof value.on === "function" && "once" in value && typeof value.once === "function" && "removeListener" in value && typeof value.removeListener === "function";
+}
+function isBrowserResponseBody(value) {
+  return typeof value === "object" && value !== null && "cancel" in value && typeof value.cancel === "function";
+}
+function setResponseBodySource(body, source) {
+  if (isNodeResponseBody(body) && isNodeResponseBody(source)) {
+    responseBodySources.set(body, source);
+  }
+}
+function setResponseBodyDisposer(response, dispose) {
+  responseBodyDisposers.set(response, dispose);
+  return () => {
+    if (responseBodyDisposers.get(response) === dispose) {
+      responseBodyDisposers.delete(response);
+    }
+  };
+}
+function disposeNodeResponseBody(readableStream, disposed = new Set) {
+  if (disposed.has(readableStream)) {
+    return;
+  }
+  disposed.add(readableStream);
+  const source = responseBodySources.get(readableStream);
+  responseBodySources.delete(readableStream);
+  if (readableStream.closed !== true) {
+    if (readableStream.destroy) {
+      if (isNodeEventEmitterBody(readableStream)) {
+        const onError = (error) => {
+          logger.warning("Error disposing Node stream", error);
+        };
+        const onClose = () => {
+          readableStream.removeListener("error", onError);
+        };
+        readableStream.on("error", onError);
+        readableStream.once("close", onClose);
+        try {
+          readableStream.destroy();
+        } catch (error) {
+          readableStream.removeListener("error", onError);
+          readableStream.removeListener("close", onClose);
+          throw error;
+        }
+      } else {
+        readableStream.destroy();
+      }
+    } else {
+      readableStream.resume();
+    }
+  }
+  if (source) {
+    disposeNodeResponseBody(source, disposed);
+  }
+}
+function disposeNodeStream(stream) {
+  try {
+    disposeNodeResponseBody(stream);
+  } catch (error) {
+    logger.warning("Error disposing Node stream", error);
+  }
+}
+async function disposeResponseBody(response) {
+  try {
+    const dispose = responseBodyDisposers.get(response);
+    responseBodyDisposers.delete(response);
+    try {
+      const readableStream = response.readableStreamBody;
+      if (isNodeResponseBody(readableStream)) {
+        disposeNodeStream(readableStream);
+        return;
+      }
+      const browserStream = response.browserStreamBody;
+      if (isBrowserResponseBody(browserStream)) {
+        await browserStream.cancel();
+      }
+    } finally {
+      dispose?.();
+    }
+  } catch (error) {
+    logger.warning("Error disposing response body", error);
+  }
+}
+
 // node_modules/@typespec/ts-http-runtime/dist/esm/nodeHttpClient.js
 var DEFAULT_TLS_SETTINGS = {};
 function isReadableStream(body) {
-  return body && typeof body.pipe === "function";
+  return typeof body === "object" && body !== null && "pipe" in body && typeof body.pipe === "function";
 }
 function isStreamComplete(stream) {
   if (stream.readable === false) {
@@ -63547,7 +63189,13 @@ function isStreamComplete(stream) {
   });
 }
 function isArrayBuffer(body) {
-  return body && typeof body.byteLength === "number";
+  return types2.isArrayBuffer(body) || ArrayBuffer.isView(body);
+}
+function arrayBufferToBuffer(body) {
+  if (Buffer.isBuffer(body)) {
+    return body;
+  }
+  return ArrayBuffer.isView(body) ? Buffer.from(body.buffer, body.byteOffset, body.byteLength) : Buffer.from(body);
 }
 
 class ReportTransform extends Transform {
@@ -63568,15 +63216,111 @@ class ReportTransform extends Transform {
     this.progressCallback = progressCallback;
   }
 }
+function createRequestLifecycle(request, options, isInsecure, resolve, reject) {
+  let clientRequest;
+  let response;
+  let requestDone = false;
+  let resolveRequestComplete;
+  const requestComplete = new Promise((_resolve) => {
+    resolveRequestComplete = _resolve;
+  });
+  const onComplete = () => {
+    requestDone = true;
+    clientRequest.removeListener("finish", onComplete);
+    clientRequest.removeListener("close", onComplete);
+    resolveRequestComplete();
+  };
+  const onResponse = (incomingResponse) => {
+    response = incomingResponse;
+    resolve({
+      response: incomingResponse,
+      requestComplete,
+      isRequestComplete: () => requestDone,
+      disposeRequest: () => {
+        if (!requestDone) {
+          clientRequest.destroy();
+        }
+      }
+    });
+  };
+  return {
+    createRequest: (onResponseCallback = onResponse) => {
+      clientRequest = isInsecure ? http2.request(options, onResponseCallback) : https2.request(options, onResponseCallback);
+      clientRequest.once("finish", onComplete);
+      clientRequest.once("close", onComplete);
+      return clientRequest;
+    },
+    onResponse,
+    rejectRequest: (error) => {
+      reject(toRequestSendError(error, request));
+    },
+    abortRequest: (req) => {
+      const abortError = new AbortError("The operation was aborted. Rejecting from abort signal callback while making request.");
+      response?.destroy(abortError);
+      req.destroy(abortError);
+      reject(abortError);
+    }
+  };
+}
+function toRequestSendError(error, request) {
+  if (isRestError(error)) {
+    return error;
+  }
+  const prematureClose = error.code === "ERR_STREAM_PREMATURE_CLOSE";
+  return new RestError(prematureClose ? "Request body stream closed before ending" : error.message, {
+    code: prematureClose ? RestError.REQUEST_SEND_ERROR : error.code ?? RestError.REQUEST_SEND_ERROR,
+    request
+  });
+}
+function sendRequestBody(clientRequest, body, request, onError) {
+  if (body && isReadableStream(body)) {
+    pipeUploadStream(body, clientRequest, request, onError);
+  } else if (body) {
+    if (typeof body === "string" || Buffer.isBuffer(body)) {
+      clientRequest.end(body);
+    } else {
+      logger.error("Unrecognized body type", body);
+      throw new RestError("Unrecognized body type", { request });
+    }
+  } else {
+    clientRequest.end();
+  }
+}
+function prepareRequestBody(request, useExpectContinue) {
+  const requestBody = request.body;
+  const resolvedBody = typeof requestBody === "function" ? requestBody() : requestBody;
+  const body = resolvedBody && isArrayBuffer(resolvedBody) ? arrayBufferToBuffer(resolvedBody) : resolvedBody;
+  if (!useExpectContinue && body && !request.headers.has("Content-Length")) {
+    const bodyLength = getBodyLength(body);
+    if (bodyLength !== null) {
+      request.headers.set("Content-Length", bodyLength);
+    }
+  }
+  if (!body || !request.onUploadProgress) {
+    return body;
+  }
+  const uploadReportStream = new ReportTransform(request.onUploadProgress);
+  uploadReportStream.on("error", (e) => {
+    logger.error("Error in upload progress", e);
+  });
+  if (isReadableStream(body)) {
+    pipeUploadStream(body, uploadReportStream, request);
+  } else {
+    uploadReportStream.end(body);
+  }
+  return uploadReportStream;
+}
 
 class NodeHttpClient {
   cachedHttpAgent;
   cachedHttpsAgents = new WeakMap;
   async sendRequest(request) {
+    const requestBody = request.body;
     const abortController = new AbortController;
     let abortListener;
-    if (request.abortSignal) {
-      if (request.abortSignal.aborted) {
+    const requestAbortSignal = request.abortSignal;
+    if (requestAbortSignal) {
+      if (requestAbortSignal.aborted) {
         throw new AbortError("The operation was aborted. Request has already been canceled.");
       }
       abortListener = (event) => {
@@ -63584,7 +63328,7 @@ class NodeHttpClient {
           abortController.abort();
         }
       };
-      request.abortSignal.addEventListener("abort", abortListener);
+      requestAbortSignal.addEventListener("abort", abortListener);
     }
     let timeoutId;
     if (request.timeout > 0) {
@@ -63596,29 +63340,25 @@ class NodeHttpClient {
     }
     const acceptEncoding = request.headers.get("Accept-Encoding");
     const shouldDecompress = acceptEncoding?.includes("gzip") || acceptEncoding?.includes("deflate");
-    let body = typeof request.body === "function" ? request.body() : request.body;
-    if (body && !request.headers.has("Content-Length")) {
-      const bodyLength = getBodyLength(body);
-      if (bodyLength !== null) {
-        request.headers.set("Content-Length", bodyLength);
-      }
-    }
+    let body;
     let responseStream;
+    let requestComplete = Promise.resolve();
     try {
-      if (body && request.onUploadProgress) {
-        const onUploadProgress = request.onUploadProgress;
-        const uploadReportStream = new ReportTransform(onUploadProgress);
-        uploadReportStream.on("error", (e) => {
-          logger.error("Error in upload progress", e);
-        });
-        if (isReadableStream(body)) {
-          body.pipe(uploadReportStream);
-        } else {
-          uploadReportStream.end(body);
-        }
-        body = uploadReportStream;
+      let useExpectContinue = hasExpectContinue(request);
+      const knownBodyLength = useExpectContinue && typeof requestBody !== "function" ? getBodyLength(requestBody ?? null) : null;
+      if (knownBodyLength === 0) {
+        removeExpectContinueHeader(request);
+        useExpectContinue = false;
       }
-      const res = await this.makeRequest(request, abortController, body);
+      if (!useExpectContinue) {
+        body = prepareRequestBody(request, false);
+      }
+      const result = useExpectContinue ? await this.makeRequestWithExpectContinue(request, abortController, () => {
+        body = prepareRequestBody(request, true);
+        return body;
+      }, knownBodyLength) : await this.makeRequest(request, abortController, body);
+      requestComplete = result.requestComplete;
+      const res = result.response;
       const headers = getResponseHeaders(res);
       const status = res.statusCode ?? 0;
       const response = {
@@ -63626,19 +63366,26 @@ class NodeHttpClient {
         headers,
         request
       };
-      if (request.method === "HEAD") {
+      if (!result.isRequestComplete()) {
+        setRequestCompletion(response, result.requestComplete);
+        const clearDisposer = setResponseBodyDisposer(response, result.disposeRequest);
+        result.requestComplete.then(clearDisposer).catch((error) => {
+          logger.warning("Error disposing request", error);
+        });
+      }
+      const method = typeof request.requestOverrides?.method === "string" ? request.requestOverrides.method.toUpperCase() : request.method;
+      if (method === "HEAD") {
         res.resume();
         return response;
       }
-      responseStream = shouldDecompress ? getDecodedResponseStream(res, headers) : res;
+      responseStream = shouldDecompress ? getDecodedResponseStream(res, headers, abortController.signal) : res;
       const onDownloadProgress = request.onDownloadProgress;
       if (onDownloadProgress) {
         const downloadReportStream = new ReportTransform(onDownloadProgress);
         downloadReportStream.on("error", (e) => {
           logger.error("Error in download progress", e);
         });
-        responseStream.pipe(downloadReportStream);
-        responseStream = downloadReportStream;
+        responseStream = pipeResponseStream(responseStream, downloadReportStream, abortController.signal);
       }
       if (request.streamResponseStatusCodes?.has(Number.POSITIVE_INFINITY) || request.streamResponseStatusCodes?.has(response.status)) {
         response.readableStreamBody = responseStream;
@@ -63646,11 +63393,19 @@ class NodeHttpClient {
         response.bodyAsText = await streamToText(responseStream);
       }
       return response;
+    } catch (error) {
+      if (isReadableStream(body)) {
+        disposeNodeStream(body);
+      }
+      if (responseStream) {
+        disposeNodeStream(responseStream);
+      }
+      throw error;
     } finally {
       if (timeoutId !== undefined) {
         clearTimeout(timeoutId);
       }
-      if (request.abortSignal && abortListener) {
+      if (requestAbortSignal && abortListener) {
         let uploadStreamDone = Promise.resolve();
         if (isReadableStream(body)) {
           uploadStreamDone = isStreamComplete(body);
@@ -63659,9 +63414,9 @@ class NodeHttpClient {
         if (isReadableStream(responseStream)) {
           downloadStreamDone = isStreamComplete(responseStream);
         }
-        Promise.all([uploadStreamDone, downloadStreamDone]).then(() => {
+        Promise.all([requestComplete, uploadStreamDone, downloadStreamDone]).then(() => {
           if (abortListener) {
-            request.abortSignal?.removeEventListener("abort", abortListener);
+            requestAbortSignal.removeEventListener("abort", abortListener);
           }
         }).catch((e) => {
           logger.warning("Error when cleaning up abortListener on httpRequest", e);
@@ -63670,46 +63425,54 @@ class NodeHttpClient {
     }
   }
   makeRequest(request, abortController, body) {
+    const { options, isInsecure } = this.getRequestOptions(request);
+    return new Promise((resolve, reject) => {
+      const { createRequest, rejectRequest, abortRequest } = createRequestLifecycle(request, options, isInsecure, resolve, reject);
+      const req = createRequest();
+      req.once("error", rejectRequest);
+      abortController.signal.addEventListener("abort", () => abortRequest(req));
+      sendRequestBody(req, body, request, rejectRequest);
+    });
+  }
+  makeRequestWithExpectContinue(request, abortController, prepareBody, knownBodyLength) {
+    const { options, isInsecure } = this.getRequestOptions(request);
+    addExpectContinueFraming(options, knownBodyLength);
+    return new Promise((resolve, reject) => {
+      const { createRequest, onResponse, rejectRequest, abortRequest } = createRequestLifecycle(request, options, isInsecure, resolve, reject);
+      createExpectContinueRequest({
+        abortSignal: abortController.signal,
+        bodyStream: isReadableStream(request.body) ? request.body : undefined,
+        createRequest,
+        onAbort: abortRequest,
+        onError: rejectRequest,
+        onBodyError: reject,
+        onResponse,
+        sendBody: (clientRequest) => {
+          const body = prepareBody();
+          sendRequestBody(clientRequest, body, request, rejectRequest);
+        }
+      });
+    });
+  }
+  getRequestOptions(request) {
     const url = new URL(request.url);
     const isInsecure = url.protocol !== "https:";
     if (isInsecure && !request.allowInsecureConnection) {
       throw new Error(`Cannot connect to ${request.url} while allowInsecureConnection is false.`);
     }
     const agent = request.agent ?? this.getOrCreateAgent(request, isInsecure);
-    const options = {
-      agent,
-      hostname: url.hostname,
-      path: `${url.pathname}${url.search}`,
-      port: url.port,
-      method: request.method,
-      headers: request.headers.toJSON({ preserveCase: true }),
-      ...request.requestOverrides
-    };
-    return new Promise((resolve, reject) => {
-      const req = isInsecure ? http2.request(options, resolve) : https2.request(options, resolve);
-      req.once("error", (err) => {
-        reject(new RestError(err.message, { code: err.code ?? RestError.REQUEST_SEND_ERROR, request }));
-      });
-      abortController.signal.addEventListener("abort", () => {
-        const abortError = new AbortError("The operation was aborted. Rejecting from abort signal callback while making request.");
-        req.destroy(abortError);
-        reject(abortError);
-      });
-      if (body && isReadableStream(body)) {
-        body.pipe(req);
-      } else if (body) {
-        if (typeof body === "string" || Buffer.isBuffer(body)) {
-          req.end(body);
-        } else if (isArrayBuffer(body)) {
-          req.end(ArrayBuffer.isView(body) ? Buffer.from(body.buffer, body.byteOffset, body.byteLength) : Buffer.from(body));
-        } else {
-          logger.error("Unrecognized body type", body);
-          reject(new RestError("Unrecognized body type"));
-        }
-      } else {
-        req.end();
+    return {
+      isInsecure,
+      options: {
+        agent,
+        hostname: url.hostname,
+        path: `${url.pathname}${url.search}`,
+        port: url.port,
+        method: request.method,
+        headers: request.headers.toJSON({ preserveCase: true }),
+        ...request.requestOverrides
       }
-    });
+    };
   }
   getOrCreateAgent(request, isInsecure) {
     const disableKeepAlive = request.disableKeepAlive;
@@ -63754,41 +63517,79 @@ function getResponseHeaders(res) {
   }
   return headers;
 }
-function getDecodedResponseStream(stream, headers) {
+function getDecodedResponseStream(stream, headers, abortSignal) {
   const contentEncoding = headers.get("Content-Encoding");
   if (contentEncoding === "gzip") {
-    const unzip = zlib.createGunzip();
-    stream.pipe(unzip);
-    return unzip;
+    return pipeResponseStream(stream, zlib.createGunzip(), abortSignal);
   } else if (contentEncoding === "deflate") {
-    const inflate = zlib.createInflate();
-    stream.pipe(inflate);
-    return inflate;
+    return pipeResponseStream(stream, zlib.createInflate(), abortSignal);
   }
   return stream;
+}
+function pipeUploadStream(source, destination, request, onError) {
+  let tearingDown = false;
+  const cleanupFinished = finished(source, { writable: false }, onSourceComplete);
+  function onSourceComplete(error) {
+    cleanupFinished();
+    destination.removeListener("close", onDestinationClose);
+    if (error && !tearingDown) {
+      const requestError = toRequestSendError(error, request);
+      destination.destroy(requestError);
+      onError?.(requestError);
+    }
+  }
+  function onDestinationClose() {
+    tearingDown = true;
+    source.unpipe(destination);
+    disposeNodeStream(source);
+  }
+  destination.once("close", onDestinationClose);
+  source.pipe(destination);
+}
+function pipeResponseStream(source, destination, abortSignal) {
+  setResponseBodySource(destination, source);
+  let cleanupSource = () => {};
+  let cleanupDestination = () => {};
+  cleanupSource = finished(source, { writable: false }, (error) => {
+    cleanupSource();
+    if (error) {
+      destination.destroy(abortSignal.aborted ? new AbortError : error);
+    }
+  });
+  cleanupDestination = finished(destination, { writable: false }, () => {
+    cleanupDestination();
+    source.unpipe(destination);
+    if (source.readable) {
+      disposeNodeStream(source);
+    }
+  });
+  return source.pipe(destination);
 }
 function streamToText(stream) {
   return new Promise((resolve, reject) => {
     const buffer = [];
-    stream.on("data", (chunk) => {
+    const cleanupFinished = finished(stream, { writable: false }, onComplete);
+    function onData(chunk) {
       if (Buffer.isBuffer(chunk)) {
         buffer.push(chunk);
       } else {
         buffer.push(Buffer.from(chunk));
       }
-    });
-    stream.on("end", () => {
-      resolve(Buffer.concat(buffer).toString("utf8"));
-    });
-    stream.on("error", (e) => {
-      if (e && e?.name === "AbortError") {
-        reject(e);
-      } else {
-        reject(new RestError(`Error reading response as text: ${e.message}`, {
+    }
+    function onComplete(error) {
+      cleanupFinished();
+      stream.removeListener("data", onData);
+      if (error?.name === "AbortError") {
+        reject(error);
+      } else if (error) {
+        reject(new RestError(`Error reading response as text: ${error.message}`, {
           code: RestError.PARSE_ERROR
         }));
+      } else {
+        resolve(Buffer.concat(buffer).toString("utf8"));
       }
-    });
+    }
+    stream.on("data", onData);
   });
 }
 function getBodyLength(body) {
@@ -63801,7 +63602,7 @@ function getBodyLength(body) {
   } else if (isArrayBuffer(body)) {
     return body.byteLength;
   } else if (typeof body === "string") {
-    return Buffer.from(body).length;
+    return Buffer.byteLength(body);
   } else {
     return null;
   }
@@ -64054,11 +63855,17 @@ function retryPolicy(strategies, options = { maxRetries: DEFAULT_RETRY_POLICY_CO
               }
               if (retryAfterInMs || retryAfterInMs === 0) {
                 strategyLogger.info(`Retry ${retryCount}: Retry strategy ${strategy.name} retries after ${retryAfterInMs}`);
+                if (response) {
+                  await disposeResponseBody(response);
+                }
                 await delay(retryAfterInMs, undefined, { abortSignal: request.abortSignal });
                 continue retryRequest;
               }
               if (redirectTo) {
                 strategyLogger.info(`Retry ${retryCount}: Retry strategy ${strategy.name} redirects to ${redirectTo}`);
+                if (response) {
+                  await disposeResponseBody(response);
+                }
                 request.url = redirectTo;
                 continue retryRequest;
               }
@@ -64203,8 +64010,8 @@ function tlsPolicy(tlsSettings) {
 }
 
 // node_modules/@typespec/ts-http-runtime/dist/esm/policies/proxyPolicy.js
-var import_https_proxy_agent = __toESM(require_dist2(), 1);
-var import_http_proxy_agent = __toESM(require_dist3(), 1);
+init_dist2();
+init_dist3();
 var HTTPS_PROXY = "HTTPS_PROXY";
 var HTTP_PROXY = "HTTP_PROXY";
 var ALL_PROXY = "ALL_PROXY";
@@ -64312,12 +64119,12 @@ function setProxyAgentOnRequest(request, cachedAgents, proxyUrl) {
   }
   if (isInsecure) {
     if (!cachedAgents.httpProxyAgent) {
-      cachedAgents.httpProxyAgent = new import_http_proxy_agent.HttpProxyAgent(proxyUrl);
+      cachedAgents.httpProxyAgent = new HttpProxyAgent(proxyUrl);
     }
     request.agent = cachedAgents.httpProxyAgent;
   } else {
     if (!cachedAgents.httpsProxyAgent) {
-      cachedAgents.httpsProxyAgent = new import_https_proxy_agent.HttpsProxyAgent(proxyUrl);
+      cachedAgents.httpsProxyAgent = new HttpsProxyAgent(proxyUrl);
     }
     request.agent = cachedAgents.httpsProxyAgent;
   }
@@ -64383,10 +64190,14 @@ async function handleRedirect(next, response, maxRetries, allowCrossOriginRedire
     request.url = url.toString();
     if (status === 303) {
       request.method = "GET";
-      request.headers.delete("Content-Length");
+      if (request.requestOverrides && "method" in request.requestOverrides) {
+        request.requestOverrides = { ...request.requestOverrides, method: "GET" };
+      }
+      removeRequestBodyHeaders(request);
       delete request.body;
     }
     request.headers.delete("Authorization");
+    await disposeResponseBody(response);
     const res = await next(request);
     return handleRedirect(next, res, maxRetries, allowCrossOriginRedirects, currentRetries + 1);
   }
@@ -65374,7 +65185,12 @@ function serializeDictionaryType(serializer, mapper, object, objectName, isXml, 
   const tempDictionary = {};
   for (const key of Object.keys(object)) {
     const serializedValue = serializer.serialize(valueType, object[key], objectName, options);
-    tempDictionary[key] = getXmlObjectValue(valueType, serializedValue, isXml, options);
+    Object.defineProperty(tempDictionary, key, {
+      value: getXmlObjectValue(valueType, serializedValue, isXml, options),
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
   }
   if (isXml && mapper.xmlNamespace) {
     const xmlnsKey = mapper.xmlNamespacePrefix ? `xmlns:${mapper.xmlNamespacePrefix}` : "xmlns";
@@ -65536,7 +65352,12 @@ function deserializeCompositeType(serializer, mapper, responseBody, objectName, 
       const dictionary = {};
       for (const headerKey of Object.keys(responseBody)) {
         if (headerKey.startsWith(headerCollectionPrefix)) {
-          dictionary[headerKey.substring(headerCollectionPrefix.length)] = serializer.deserialize(propertyMapper.type.value, responseBody[headerKey], propertyObjectName, options);
+          Object.defineProperty(dictionary, headerKey.substring(headerCollectionPrefix.length), {
+            value: serializer.deserialize(propertyMapper.type.value, responseBody[headerKey], propertyObjectName, options),
+            enumerable: true,
+            configurable: true,
+            writable: true
+          });
         }
         handledPropertyNames.push(headerKey);
       }
@@ -65646,7 +65467,12 @@ function deserializeDictionaryType(serializer, mapper, responseBody, objectName,
   if (responseBody) {
     const tempDictionary = {};
     for (const key of Object.keys(responseBody)) {
-      tempDictionary[key] = serializer.deserialize(value, responseBody[key], objectName, options);
+      Object.defineProperty(tempDictionary, key, {
+        value: serializer.deserialize(value, responseBody[key], objectName, options),
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
     }
     return tempDictionary;
   }
@@ -91734,7 +91560,7 @@ Other caches with similar key:`);
 }
 function downloadCache(archiveLocation, archivePath, options) {
   return __awaiter16(this, undefined, undefined, function* () {
-    const archiveUrl = new URL2(archiveLocation);
+    const archiveUrl = new URL4(archiveLocation);
     const downloadOptions = getDownloadOptions(options);
     if (archiveUrl.hostname.endsWith(".blob.core.windows.net")) {
       if (downloadOptions.useAzureSdk) {
@@ -93612,7 +93438,7 @@ function extractUrlVariableNames(url) {
   }
   return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
 }
-function omit(object, keysToOmit) {
+function omit3(object, keysToOmit) {
   const result = { __proto__: null };
   for (const key of Object.keys(object)) {
     if (keysToOmit.indexOf(key) === -1) {
@@ -93749,7 +93575,7 @@ function parse2(options) {
   let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
   let headers = Object.assign({}, options.headers);
   let body;
-  let parameters = omit(options, [
+  let parameters = omit3(options, [
     "method",
     "baseUrl",
     "url",
@@ -93763,7 +93589,7 @@ function parse2(options) {
     url = options.baseUrl + url;
   }
   const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit(parameters, omittedParameters);
+  const remainingParameters = omit3(parameters, omittedParameters);
   const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
   if (!isBinaryRequest) {
     if (options.mediaType.format) {
@@ -97614,7 +97440,7 @@ function assertApiDigest(apiDigest, actualHex, assetName) {
 }
 
 // src/verify/sigstore.ts
-var import_sigstore = __toESM(require_dist13(), 1);
+var import_sigstore = __toESM(require_dist10(), 1);
 var VERIFY_POLICY = {
   certificateIdentityURI: CERT_IDENTITY_URI,
   certificateIssuer: CERT_ISSUER,
@@ -97871,5 +97697,5 @@ export {
   run
 };
 
-//# debugId=FB8360253865956464756E2164756E21
+//# debugId=6B134DECF34711EE64756E2164756E21
 //# sourceMappingURL=index.js.map
