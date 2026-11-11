@@ -63080,6 +63080,12 @@ function setRequestCompletion(response, completion) {
     logger.warning("Error tracking request completion", error);
   });
 }
+function getRequestCompletion(response) {
+  return requestCompletions.get(response);
+}
+function getResponseBodyCompletion(response) {
+  return responseBodyCompletions.get(response);
+}
 function isNodeResponseBody(value) {
   return typeof value === "object" && value !== null && "resume" in value && typeof value.resume === "function";
 }
@@ -64363,12 +64369,35 @@ function multipartPolicy() {
     }
   };
 }
+// node_modules/@azure/logger/dist/esm/index.js
+var context2 = createLoggerContext({
+  logLevelEnvVarName: "AZURE_LOG_LEVEL",
+  namespace: "azure"
+});
+var AzureLogger = context2.logger;
+function createClientLogger2(namespace) {
+  return context2.createClientLogger(namespace);
+}
+
+// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/log.js
+var logger2 = createClientLogger2("core-rest-pipeline");
+// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgentPlatform.js
+function getHeaderName2() {
+  return "User-Agent";
+}
+
+// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgent.js
+function getUserAgentHeaderName2() {
+  return getHeaderName2();
+}
+
+// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/policies/userAgentPolicy.js
+var UserAgentHeaderName2 = getUserAgentHeaderName2();
+// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/util/file.js
+var rawContent = Symbol("rawContent");
+
 // node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/policies/decompressResponsePolicy.js
 var decompressResponsePolicyName2 = decompressResponsePolicyName;
-// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/policies/proxyPolicy.js
-function getDefaultProxySettings2(proxyUrl) {
-  return getDefaultProxySettings(proxyUrl);
-}
 // node_modules/@azure/abort-controller/dist/esm/AbortError.js
 class AbortError2 extends Error {
   constructor(message) {
@@ -64455,6 +64484,147 @@ function stringToUint8Array2(value, format) {
   return stringToUint8Array(value, format);
 }
 
+// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/policies/proxyPolicy.js
+function getDefaultProxySettings2(proxyUrl) {
+  return getDefaultProxySettings(proxyUrl);
+}
+// node_modules/@azure/core-tracing/dist/esm/tracingContext.js
+var knownContextKeys = {
+  span: Symbol.for("@azure/core-tracing span"),
+  namespace: Symbol.for("@azure/core-tracing namespace")
+};
+function createTracingContext(options = {}) {
+  let context = new TracingContextImpl(options.parentContext);
+  if (options.span) {
+    context = context.setValue(knownContextKeys.span, options.span);
+  }
+  if (options.namespace) {
+    context = context.setValue(knownContextKeys.namespace, options.namespace);
+  }
+  return context;
+}
+
+class TracingContextImpl {
+  _contextMap;
+  constructor(initialContext) {
+    this._contextMap = initialContext instanceof TracingContextImpl ? new Map(initialContext._contextMap) : new Map;
+  }
+  setValue(key, value) {
+    const newContext = new TracingContextImpl(this);
+    newContext._contextMap.set(key, value);
+    return newContext;
+  }
+  getValue(key) {
+    return this._contextMap.get(key);
+  }
+  deleteValue(key) {
+    const newContext = new TracingContextImpl(this);
+    newContext._contextMap.delete(key);
+    return newContext;
+  }
+}
+
+// node_modules/@azure/core-tracing/dist/esm/state.js
+var import_state_cjs = __toESM(require_state_cjs(), 1);
+var state = import_state_cjs.state;
+
+// node_modules/@azure/core-tracing/dist/esm/instrumenter.js
+function createDefaultTracingSpan() {
+  return {
+    end: () => {},
+    isRecording: () => false,
+    recordException: () => {},
+    setAttribute: () => {},
+    setStatus: () => {},
+    addEvent: () => {}
+  };
+}
+function createDefaultInstrumenter() {
+  return {
+    createRequestHeaders: () => {
+      return {};
+    },
+    parseTraceparentHeader: () => {
+      return;
+    },
+    startSpan: (_name, spanOptions) => {
+      return {
+        span: createDefaultTracingSpan(),
+        tracingContext: createTracingContext({ parentContext: spanOptions.tracingContext })
+      };
+    },
+    withContext(_context, callback, ...callbackArgs) {
+      return callback(...callbackArgs);
+    }
+  };
+}
+function getInstrumenter() {
+  if (!state.instrumenterImplementation) {
+    state.instrumenterImplementation = createDefaultInstrumenter();
+  }
+  return state.instrumenterImplementation;
+}
+
+// node_modules/@azure/core-tracing/dist/esm/tracingClient.js
+function createTracingClient(options) {
+  const { namespace, packageName, packageVersion } = options;
+  function startSpan(name, operationOptions, spanOptions) {
+    const startSpanResult = getInstrumenter().startSpan(name, {
+      ...spanOptions,
+      packageName,
+      packageVersion,
+      tracingContext: operationOptions?.tracingOptions?.tracingContext
+    });
+    let tracingContext = startSpanResult.tracingContext;
+    const span = startSpanResult.span;
+    if (!tracingContext.getValue(knownContextKeys.namespace)) {
+      tracingContext = tracingContext.setValue(knownContextKeys.namespace, namespace);
+    }
+    span.setAttribute("az.namespace", tracingContext.getValue(knownContextKeys.namespace));
+    const updatedOptions = Object.assign({}, operationOptions, {
+      tracingOptions: { ...operationOptions?.tracingOptions, tracingContext }
+    });
+    return {
+      span,
+      updatedOptions
+    };
+  }
+  async function withSpan(name, operationOptions, callback, spanOptions) {
+    const { span, updatedOptions } = startSpan(name, operationOptions, spanOptions);
+    try {
+      const result = await withContext(updatedOptions.tracingOptions.tracingContext, () => callback(updatedOptions, span));
+      span.setStatus({ status: "success" });
+      return result;
+    } catch (err) {
+      span.setStatus({ status: "error", error: err });
+      throw err;
+    } finally {
+      span.end();
+    }
+  }
+  function withContext(context, callback, ...callbackArgs) {
+    return getInstrumenter().withContext(context, callback, ...callbackArgs);
+  }
+  function parseTraceparentHeader(traceparentHeader) {
+    return getInstrumenter().parseTraceparentHeader(traceparentHeader);
+  }
+  function createRequestHeaders(tracingContext) {
+    return getInstrumenter().createRequestHeaders(tracingContext);
+  }
+  return {
+    startSpan,
+    withSpan,
+    withContext,
+    parseTraceparentHeader,
+    createRequestHeaders
+  };
+}
+// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/restError.js
+function isRestError2(e) {
+  return isRestError(e);
+}
+// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/policies/retryPolicy.js
+var retryPolicyLogger2 = createClientLogger2("core-rest-pipeline retryPolicy");
 // node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/util/tokenCycler.js
 var DEFAULT_CYCLER_OPTIONS = {
   forcedRefreshWindowInMs: 1000,
@@ -64545,23 +64715,6 @@ function createTokenCycler(credential, tokenCyclerOptions) {
     return token;
   };
 }
-// node_modules/@azure/logger/dist/esm/index.js
-var context2 = createLoggerContext({
-  logLevelEnvVarName: "AZURE_LOG_LEVEL",
-  namespace: "azure"
-});
-var AzureLogger = context2.logger;
-function createClientLogger2(namespace) {
-  return context2.createClientLogger(namespace);
-}
-
-// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/log.js
-var logger2 = createClientLogger2("core-rest-pipeline");
-
-// node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/restError.js
-function isRestError2(e) {
-  return isRestError(e);
-}
 
 // node_modules/@azure/storage-blob/node_modules/@azure/core-rest-pipeline/dist/esm/policies/bearerTokenAuthenticationPolicy.js
 var bearerTokenAuthenticationPolicyName = "bearerTokenAuthenticationPolicy";
@@ -64645,6 +64798,7 @@ function bearerTokenAuthenticationPolicy(options) {
             logger
           }, parsedClaim);
           if (shouldSendRequest) {
+            await disposeResponseBody(response);
             [response, error] = await trySendRequest(request, next);
           }
         } else if (callbacks.authorizeRequestOnChallenge) {
@@ -64656,6 +64810,7 @@ function bearerTokenAuthenticationPolicy(options) {
             logger
           });
           if (shouldSendRequest) {
+            await disposeResponseBody(response);
             [response, error] = await trySendRequest(request, next);
           }
           if (isChallengeResponse(response)) {
@@ -64676,6 +64831,7 @@ function bearerTokenAuthenticationPolicy(options) {
                 logger
               }, parsedClaim);
               if (shouldSendRequest) {
+                await disposeResponseBody(response);
                 [response, error] = await trySendRequest(request, next);
               }
             }
@@ -64729,7 +64885,7 @@ function pipelineContainsDisableKeepAlivePolicy(pipeline) {
   return pipeline.getOrderedPolicies().some((policy) => policy.name === disableKeepAlivePolicyName);
 }
 // node_modules/@azure/core-rest-pipeline/dist/esm/httpHeaders.js
-function createHttpHeaders2(rawHeaders) {
+function createHttpHeaders3(rawHeaders) {
   return createHttpHeaders(rawHeaders);
 }
 // node_modules/@azure/core-rest-pipeline/dist/esm/pipelineRequest.js
@@ -65559,6 +65715,10 @@ var MapperTypeNames = {
   TimeSpan: "TimeSpan",
   UnixTime: "UnixTime"
 };
+// node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/pipeline.js
+function createEmptyPipeline4() {
+  return createEmptyPipeline();
+}
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/log.js
 var logger3 = createClientLogger2("core-rest-pipeline");
 
@@ -65570,11 +65730,6 @@ function logPolicy4(options = {}) {
   });
 }
 
-// node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/pipeline.js
-function createEmptyPipeline3() {
-  return createEmptyPipeline();
-}
-
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/policies/redirectPolicy.js
 function redirectPolicy4(options = {}) {
   return redirectPolicy(options);
@@ -65583,10 +65738,10 @@ function redirectPolicy4(options = {}) {
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgentPlatform.js
 import os8 from "node:os";
 import process4 from "node:process";
-function getHeaderName2() {
+function getHeaderName3() {
   return "User-Agent";
 }
-async function setPlatformSpecificData2(map) {
+async function setPlatformSpecificData3(map) {
   if (process4 && process4.versions) {
     const osInfo = `${os8.type()} ${os8.release()}; ${os8.arch()}`;
     if (process4.versions.bun) {
@@ -65600,7 +65755,7 @@ async function setPlatformSpecificData2(map) {
 }
 
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/constants.js
-var SDK_VERSION2 = "1.25.0";
+var SDK_VERSION3 = "1.25.1";
 
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgent.js
 function getUserAgentString(telemetryInfo) {
@@ -65611,42 +65766,41 @@ function getUserAgentString(telemetryInfo) {
   }
   return parts.join(" ");
 }
-function getUserAgentHeaderName2() {
-  return getHeaderName2();
+function getUserAgentHeaderName3() {
+  return getHeaderName3();
 }
-async function getUserAgentValue2(prefix) {
+async function getUserAgentValue3(prefix) {
   const runtimeInfo = new Map;
-  runtimeInfo.set("core-rest-pipeline", SDK_VERSION2);
-  await setPlatformSpecificData2(runtimeInfo);
+  runtimeInfo.set("core-rest-pipeline", SDK_VERSION3);
+  await setPlatformSpecificData3(runtimeInfo);
   const defaultAgent = getUserAgentString(runtimeInfo);
   const userAgentValue = prefix ? `${prefix} ${defaultAgent}` : defaultAgent;
   return userAgentValue;
 }
 
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/policies/userAgentPolicy.js
-var UserAgentHeaderName2 = getUserAgentHeaderName2();
+var UserAgentHeaderName3 = getUserAgentHeaderName3();
 var userAgentPolicyName4 = "userAgentPolicy";
 function userAgentPolicy5(options = {}) {
-  const userAgentValue = getUserAgentValue2(options.userAgentPrefix);
+  const userAgentValue = getUserAgentValue3(options.userAgentPrefix);
   return {
     name: userAgentPolicyName4,
     async sendRequest(request, next) {
-      if (!request.headers.has(UserAgentHeaderName2)) {
-        request.headers.set(UserAgentHeaderName2, await userAgentValue);
+      if (!request.headers.has(UserAgentHeaderName3)) {
+        request.headers.set(UserAgentHeaderName3, await userAgentValue);
       }
       return next(request);
     }
   };
 }
-
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/util/file.js
-var rawContent = Symbol("rawContent");
-function hasRawContent(x) {
-  return typeof x[rawContent] === "function";
+var rawContent2 = Symbol("rawContent");
+function hasRawContent2(x) {
+  return typeof x[rawContent2] === "function";
 }
-function getRawContent(blob) {
-  if (hasRawContent(blob)) {
-    return blob[rawContent]();
+function getRawContent2(blob) {
+  if (hasRawContent2(blob)) {
+    return blob[rawContent2]();
   } else {
     return blob;
   }
@@ -65661,8 +65815,8 @@ function multipartPolicy4() {
     sendRequest: async (request, next) => {
       if (request.multipartBody) {
         for (const part of request.multipartBody.parts) {
-          if (hasRawContent(part.body)) {
-            part.body = getRawContent(part.body);
+          if (hasRawContent2(part.body)) {
+            part.body = getRawContent2(part.body);
           }
         }
       }
@@ -65714,147 +65868,17 @@ function agentPolicy4(agent) {
 function tlsPolicy4(tlsSettings) {
   return tlsPolicy(tlsSettings);
 }
-// node_modules/@azure/core-tracing/dist/esm/tracingContext.js
-var knownContextKeys = {
-  span: Symbol.for("@azure/core-tracing span"),
-  namespace: Symbol.for("@azure/core-tracing namespace")
-};
-function createTracingContext(options = {}) {
-  let context = new TracingContextImpl(options.parentContext);
-  if (options.span) {
-    context = context.setValue(knownContextKeys.span, options.span);
-  }
-  if (options.namespace) {
-    context = context.setValue(knownContextKeys.namespace, options.namespace);
-  }
-  return context;
-}
 
-class TracingContextImpl {
-  _contextMap;
-  constructor(initialContext) {
-    this._contextMap = initialContext instanceof TracingContextImpl ? new Map(initialContext._contextMap) : new Map;
-  }
-  setValue(key, value) {
-    const newContext = new TracingContextImpl(this);
-    newContext._contextMap.set(key, value);
-    return newContext;
-  }
-  getValue(key) {
-    return this._contextMap.get(key);
-  }
-  deleteValue(key) {
-    const newContext = new TracingContextImpl(this);
-    newContext._contextMap.delete(key);
-    return newContext;
-  }
-}
-
-// node_modules/@azure/core-tracing/dist/esm/state.js
-var import_state_cjs = __toESM(require_state_cjs(), 1);
-var state = import_state_cjs.state;
-
-// node_modules/@azure/core-tracing/dist/esm/instrumenter.js
-function createDefaultTracingSpan() {
-  return {
-    end: () => {},
-    isRecording: () => false,
-    recordException: () => {},
-    setAttribute: () => {},
-    setStatus: () => {},
-    addEvent: () => {}
-  };
-}
-function createDefaultInstrumenter() {
-  return {
-    createRequestHeaders: () => {
-      return {};
-    },
-    parseTraceparentHeader: () => {
-      return;
-    },
-    startSpan: (_name, spanOptions) => {
-      return {
-        span: createDefaultTracingSpan(),
-        tracingContext: createTracingContext({ parentContext: spanOptions.tracingContext })
-      };
-    },
-    withContext(_context, callback, ...callbackArgs) {
-      return callback(...callbackArgs);
-    }
-  };
-}
-function getInstrumenter() {
-  if (!state.instrumenterImplementation) {
-    state.instrumenterImplementation = createDefaultInstrumenter();
-  }
-  return state.instrumenterImplementation;
-}
-
-// node_modules/@azure/core-tracing/dist/esm/tracingClient.js
-function createTracingClient(options) {
-  const { namespace, packageName, packageVersion } = options;
-  function startSpan(name, operationOptions, spanOptions) {
-    const startSpanResult = getInstrumenter().startSpan(name, {
-      ...spanOptions,
-      packageName,
-      packageVersion,
-      tracingContext: operationOptions?.tracingOptions?.tracingContext
-    });
-    let tracingContext = startSpanResult.tracingContext;
-    const span = startSpanResult.span;
-    if (!tracingContext.getValue(knownContextKeys.namespace)) {
-      tracingContext = tracingContext.setValue(knownContextKeys.namespace, namespace);
-    }
-    span.setAttribute("az.namespace", tracingContext.getValue(knownContextKeys.namespace));
-    const updatedOptions = Object.assign({}, operationOptions, {
-      tracingOptions: { ...operationOptions?.tracingOptions, tracingContext }
-    });
-    return {
-      span,
-      updatedOptions
-    };
-  }
-  async function withSpan(name, operationOptions, callback, spanOptions) {
-    const { span, updatedOptions } = startSpan(name, operationOptions, spanOptions);
-    try {
-      const result = await withContext(updatedOptions.tracingOptions.tracingContext, () => callback(updatedOptions, span));
-      span.setStatus({ status: "success" });
-      return result;
-    } catch (err) {
-      span.setStatus({ status: "error", error: err });
-      throw err;
-    } finally {
-      span.end();
-    }
-  }
-  function withContext(context, callback, ...callbackArgs) {
-    return getInstrumenter().withContext(context, callback, ...callbackArgs);
-  }
-  function parseTraceparentHeader(traceparentHeader) {
-    return getInstrumenter().parseTraceparentHeader(traceparentHeader);
-  }
-  function createRequestHeaders(tracingContext) {
-    return getInstrumenter().createRequestHeaders(tracingContext);
-  }
-  return {
-    startSpan,
-    withSpan,
-    withContext,
-    parseTraceparentHeader,
-    createRequestHeaders
-  };
-}
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/restError.js
 var RestError4 = RestError;
-function isRestError5(e) {
+function isRestError4(e) {
   return isRestError(e);
 }
 
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/policies/tracingPolicy.js
 var tracingPolicyName3 = "tracingPolicy";
 function tracingPolicy3(options = {}) {
-  const userAgentPromise = getUserAgentValue2(options.userAgentPrefix);
+  const userAgentPromise = getUserAgentValue3(options.userAgentPrefix);
   const sanitizer = new Sanitizer({
     additionalAllowedQueryParameters: options.additionalAllowedQueryParameters
   });
@@ -65895,7 +65919,7 @@ function tryCreateTracingClient() {
     return createTracingClient({
       namespace: "",
       packageName: "@azure/core-rest-pipeline",
-      packageVersion: SDK_VERSION2
+      packageVersion: SDK_VERSION3
     });
   } catch (e) {
     logger3.warning(`Error when creating the TracingClient: ${getErrorMessage(e)}`);
@@ -65928,7 +65952,7 @@ function tryProcessError(span, error) {
       status: "error",
       error: isError2(error) ? error : undefined
     });
-    if (isRestError5(error) && error.statusCode) {
+    if (isRestError4(error) && error.statusCode) {
       span.setAttribute("http.status_code", error.statusCode);
     }
     span.end();
@@ -65955,7 +65979,7 @@ function tryProcessResponse(span, response) {
 }
 
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/util/wrapAbortSignal.js
-function wrapAbortSignalLike(abortSignalLike) {
+function wrapAbortSignalLike2(abortSignalLike) {
   if (abortSignalLike instanceof AbortSignal) {
     return { abortSignal: abortSignalLike };
   }
@@ -65980,21 +66004,78 @@ function wrapAbortSignalLike(abortSignalLike) {
   return { abortSignal: controller.signal, cleanup };
 }
 
+// node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/util/cleanupOnCompletion.js
+function cleanupOnRequestResponseCompletion2(response, cleanup) {
+  const stream = response?.readableStreamBody;
+  const requestCompletion = response ? getRequestCompletion(response) : undefined;
+  const browserResponseCompletion = response ? getResponseBodyCompletion(response) : undefined;
+  let requestDone = requestCompletion === undefined;
+  let nodeResponseDone = !stream || !stream.readable;
+  let browserResponseDone = browserResponseCompletion === undefined;
+  let cleanedUp = false;
+  const cleanupIfComplete = () => {
+    if (cleanedUp || !requestDone || !nodeResponseDone || !browserResponseDone) {
+      return;
+    }
+    cleanedUp = true;
+    cleanup();
+  };
+  const onResponseComplete = () => {
+    stream?.removeListener("end", onResponseComplete);
+    stream?.removeListener("close", onResponseComplete);
+    stream?.removeListener("error", onResponseComplete);
+    nodeResponseDone = true;
+    try {
+      cleanupIfComplete();
+    } catch (error) {
+      logger3.warning("Error cleaning up after response stream completion", error);
+    }
+  };
+  if (!nodeResponseDone && stream) {
+    stream.once("end", onResponseComplete);
+    stream.once("close", onResponseComplete);
+    stream.once("error", onResponseComplete);
+  }
+  if (requestCompletion) {
+    requestCompletion.then(() => {
+      requestDone = true;
+      return cleanupIfComplete();
+    }).catch((error) => {
+      logger3.warning("Error cleaning up after request completion", error);
+    });
+  }
+  if (browserResponseCompletion) {
+    browserResponseCompletion.then(() => {
+      browserResponseDone = true;
+      return cleanupIfComplete();
+    }).catch((error) => {
+      logger3.warning("Error cleaning up after response body completion", error);
+    });
+  }
+  cleanupIfComplete();
+}
+
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/policies/wrapAbortSignalLikePolicy.js
 var wrapAbortSignalLikePolicyName = "wrapAbortSignalLikePolicy";
-function wrapAbortSignalLikePolicy() {
+function wrapAbortSignalLikePolicy2() {
   return {
     name: wrapAbortSignalLikePolicyName,
     sendRequest: async (request, next) => {
       if (!request.abortSignal) {
         return next(request);
       }
-      const { abortSignal, cleanup } = wrapAbortSignalLike(request.abortSignal);
+      const originalAbortSignal = request.abortSignal;
+      const { abortSignal, cleanup } = wrapAbortSignalLike2(originalAbortSignal);
       request.abortSignal = abortSignal;
+      let response;
       try {
-        return await next(request);
+        response = await next(request);
+        return response;
       } finally {
-        cleanup?.();
+        request.abortSignal = originalAbortSignal;
+        if (cleanup) {
+          cleanupOnRequestResponseCompletion2(response, cleanup);
+        }
       }
     }
   };
@@ -66002,7 +66083,7 @@ function wrapAbortSignalLikePolicy() {
 
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/createPipelineFromOptions.js
 function createPipelineFromOptions4(options) {
-  const pipeline = createEmptyPipeline3();
+  const pipeline = createEmptyPipeline4();
   if (isNodeLike2) {
     if (options.agent) {
       pipeline.addPolicy(agentPolicy4(options.agent));
@@ -66013,7 +66094,7 @@ function createPipelineFromOptions4(options) {
     pipeline.addPolicy(proxyPolicy4(options.proxyOptions));
     pipeline.addPolicy(decompressResponsePolicy4());
   }
-  pipeline.addPolicy(wrapAbortSignalLikePolicy());
+  pipeline.addPolicy(wrapAbortSignalLikePolicy2());
   pipeline.addPolicy(formDataPolicy4(), { beforePolicies: [multipartPolicyName4] });
   pipeline.addPolicy(userAgentPolicy5(options.userAgentOptions));
   pipeline.addPolicy(setClientRequestIdPolicy3(options.telemetryOptions?.clientRequestIdHeaderName));
@@ -66033,12 +66114,18 @@ function createDefaultHttpClient4() {
   const client = createDefaultHttpClient();
   return {
     async sendRequest(request) {
-      const { abortSignal, cleanup } = request.abortSignal ? wrapAbortSignalLike(request.abortSignal) : {};
+      const originalAbortSignal = request.abortSignal;
+      const { abortSignal, cleanup } = originalAbortSignal ? wrapAbortSignalLike2(originalAbortSignal) : {};
+      let response;
       try {
         request.abortSignal = abortSignal;
-        return await client.sendRequest(request);
+        response = await client.sendRequest(request);
+        return response;
       } finally {
-        cleanup?.();
+        request.abortSignal = originalAbortSignal;
+        if (cleanup) {
+          cleanupOnRequestResponseCompletion2(response, cleanup);
+        }
       }
     }
   };
@@ -66047,6 +66134,8 @@ function createDefaultHttpClient4() {
 function createPipelineRequest4(options) {
   return createPipelineRequest(options);
 }
+// node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/policies/retryPolicy.js
+var retryPolicyLogger3 = createClientLogger2("core-rest-pipeline retryPolicy");
 // node_modules/@azure/core-client/node_modules/@azure/core-rest-pipeline/dist/esm/util/tokenCycler.js
 var DEFAULT_CYCLER_OPTIONS2 = {
   forcedRefreshWindowInMs: 1000,
@@ -66144,7 +66233,7 @@ async function trySendRequest2(request, next) {
   try {
     return [await next(request), undefined];
   } catch (e) {
-    if (isRestError5(e) && e.response) {
+    if (isRestError4(e) && e.response) {
       return [e.response, e];
     } else {
       throw e;
@@ -66220,6 +66309,7 @@ function bearerTokenAuthenticationPolicy3(options) {
             logger
           }, parsedClaim);
           if (shouldSendRequest) {
+            await disposeResponseBody(response);
             [response, error] = await trySendRequest2(request, next);
           }
         } else if (callbacks.authorizeRequestOnChallenge) {
@@ -66231,6 +66321,7 @@ function bearerTokenAuthenticationPolicy3(options) {
             logger
           });
           if (shouldSendRequest) {
+            await disposeResponseBody(response);
             [response, error] = await trySendRequest2(request, next);
           }
           if (isChallengeResponse2(response)) {
@@ -66251,6 +66342,7 @@ function bearerTokenAuthenticationPolicy3(options) {
                 logger
               }, parsedClaim);
               if (shouldSendRequest) {
+                await disposeResponseBody(response);
                 [response, error] = await trySendRequest2(request, next);
               }
             }
@@ -67137,7 +67229,7 @@ var passThroughProps = new Set([
 function toPipelineRequest(webResource, options = {}) {
   const compatWebResource = webResource;
   const request = compatWebResource[originalRequestSymbol2];
-  const headers = createHttpHeaders2(webResource.headers.toJson({ preserveCase: true }));
+  const headers = createHttpHeaders3(webResource.headers.toJson({ preserveCase: true }));
   if (request) {
     request.headers = headers;
     return request;
@@ -67348,7 +67440,7 @@ function toCompatResponse(response, options) {
 function toPipelineResponse(compatResponse) {
   const extendedCompatResponse = compatResponse;
   const response = extendedCompatResponse[originalResponse];
-  const headers = createHttpHeaders2(compatResponse.headers.toJson({ preserveCase: true }));
+  const headers = createHttpHeaders3(compatResponse.headers.toJson({ preserveCase: true }));
   if (response) {
     response.headers = headers;
     return response;
@@ -71234,7 +71326,7 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
     const tagStart = indentation + `<${tagName}${attStr}`;
     let tagValue;
     if (isStopNode) {
-      tagValue = getRawContent2(tagObj[rawTagName], options);
+      tagValue = getRawContent3(tagObj[rawTagName], options);
     } else {
       tagValue = arrToStr(tagObj[rawTagName], options, newIdentation, matcher, stopNodeExpressions, qNameValidator);
     }
@@ -71275,7 +71367,7 @@ function extractAttributeValues(attrMap, options) {
   }
   return hasAttrs ? attrValues : null;
 }
-function getRawContent2(arr, options) {
+function getRawContent3(arr, options) {
   if (!Array.isArray(arr)) {
     if (arr !== undefined && arr !== null) {
       return valToStr(arr);
@@ -71296,7 +71388,7 @@ function getRawContent2(arr, options) {
       continue;
     } else if (tagName) {
       const attStr = attr_to_str_raw(item[":@"], options);
-      const nestedContent = getRawContent2(item[tagName], options);
+      const nestedContent = getRawContent3(item[tagName], options);
       if (!nestedContent || nestedContent.length === 0) {
         content += `<${tagName}${attStr}/>`;
       } else {
@@ -72195,8 +72287,32 @@ class BufferScheduler {
     }
   }
 }
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/log.js
+var logger6 = createClientLogger2("core-rest-pipeline");
+
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgentPlatform.js
+function getHeaderName4() {
+  return "User-Agent";
+}
+
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/userAgent.js
+function getUserAgentHeaderName4() {
+  return getHeaderName4();
+}
+
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/userAgentPolicy.js
+var UserAgentHeaderName4 = getUserAgentHeaderName4();
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/file.js
+var rawContent3 = Symbol("rawContent");
+
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/restError.js
+var RestError5 = RestError;
+function isRestError5(e) {
+  return isRestError(e);
+}
+
 // node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/wrapAbortSignal.js
-function wrapAbortSignalLike2(abortSignalLike) {
+function wrapAbortSignalLike3(abortSignalLike) {
   if (abortSignalLike instanceof AbortSignal) {
     return { abortSignal: abortSignalLike };
   }
@@ -72221,26 +72337,85 @@ function wrapAbortSignalLike2(abortSignalLike) {
   return { abortSignal: controller.signal, cleanup };
 }
 
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/cleanupOnCompletion.js
+function cleanupOnRequestResponseCompletion3(response, cleanup) {
+  const stream = response?.readableStreamBody;
+  const requestCompletion = response ? getRequestCompletion(response) : undefined;
+  const browserResponseCompletion = response ? getResponseBodyCompletion(response) : undefined;
+  let requestDone = requestCompletion === undefined;
+  let nodeResponseDone = !stream || !stream.readable;
+  let browserResponseDone = browserResponseCompletion === undefined;
+  let cleanedUp = false;
+  const cleanupIfComplete = () => {
+    if (cleanedUp || !requestDone || !nodeResponseDone || !browserResponseDone) {
+      return;
+    }
+    cleanedUp = true;
+    cleanup();
+  };
+  const onResponseComplete = () => {
+    stream?.removeListener("end", onResponseComplete);
+    stream?.removeListener("close", onResponseComplete);
+    stream?.removeListener("error", onResponseComplete);
+    nodeResponseDone = true;
+    try {
+      cleanupIfComplete();
+    } catch (error) {
+      logger6.warning("Error cleaning up after response stream completion", error);
+    }
+  };
+  if (!nodeResponseDone && stream) {
+    stream.once("end", onResponseComplete);
+    stream.once("close", onResponseComplete);
+    stream.once("error", onResponseComplete);
+  }
+  if (requestCompletion) {
+    requestCompletion.then(() => {
+      requestDone = true;
+      return cleanupIfComplete();
+    }).catch((error) => {
+      logger6.warning("Error cleaning up after request completion", error);
+    });
+  }
+  if (browserResponseCompletion) {
+    browserResponseCompletion.then(() => {
+      browserResponseDone = true;
+      return cleanupIfComplete();
+    }).catch((error) => {
+      logger6.warning("Error cleaning up after response body completion", error);
+    });
+  }
+  cleanupIfComplete();
+}
 // node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/defaultHttpClient.js
 function createDefaultHttpClient5() {
   const client = createDefaultHttpClient();
   return {
     async sendRequest(request) {
-      const { abortSignal, cleanup } = request.abortSignal ? wrapAbortSignalLike2(request.abortSignal) : {};
+      const originalAbortSignal = request.abortSignal;
+      const { abortSignal, cleanup } = originalAbortSignal ? wrapAbortSignalLike3(originalAbortSignal) : {};
+      let response;
       try {
         request.abortSignal = abortSignal;
-        return await client.sendRequest(request);
+        response = await client.sendRequest(request);
+        return response;
       } finally {
-        cleanup?.();
+        request.abortSignal = originalAbortSignal;
+        if (cleanup) {
+          cleanupOnRequestResponseCompletion3(response, cleanup);
+        }
       }
     }
   };
 }
-// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/restError.js
-var RestError5 = RestError;
-function isRestError6(e) {
-  return isRestError(e);
-}
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/policies/retryPolicy.js
+var retryPolicyLogger4 = createClientLogger2("core-rest-pipeline retryPolicy");
+// node_modules/@azure/storage-common/node_modules/@azure/core-rest-pipeline/dist/esm/util/tokenCycler.js
+var DEFAULT_CYCLER_OPTIONS3 = {
+  forcedRefreshWindowInMs: 1000,
+  retryIntervalInMs: 3000,
+  refreshWindowInMs: 1000 * 60 * 2
+};
 // node_modules/@azure/storage-common/dist/esm/cache.js
 var _defaultHttpClient;
 function getCachedDefaultHttpClient2() {
@@ -72958,7 +73133,7 @@ class StorageSharedKeyCredential extends Credential {
   }
 }
 // node_modules/@azure/storage-common/dist/esm/log.js
-var logger6 = createClientLogger2("storage-common");
+var logger7 = createClientLogger2("storage-common");
 
 // node_modules/@azure/storage-common/dist/esm/policies/StorageRetryPolicyType.js
 var StorageRetryPolicyType;
@@ -73005,14 +73180,14 @@ class StorageRetryPolicy extends BaseRequestPolicy {
     }
     let response;
     try {
-      logger6.info(`RetryPolicy: =====> Try=${attempt} ${isPrimaryRetry ? "Primary" : "Secondary"}`);
+      logger7.info(`RetryPolicy: =====> Try=${attempt} ${isPrimaryRetry ? "Primary" : "Secondary"}`);
       response = await this._nextPolicy.sendRequest(newRequest);
       if (!this.shouldRetry(isPrimaryRetry, attempt, response)) {
         return response;
       }
       secondaryHas404 = secondaryHas404 || !isPrimaryRetry && response.status === 404;
     } catch (err) {
-      logger6.error(`RetryPolicy: Caught error, message: ${err.message}, code: ${err.code}`);
+      logger7.error(`RetryPolicy: Caught error, message: ${err.message}, code: ${err.code}`);
       if (!this.shouldRetry(isPrimaryRetry, attempt, response, err)) {
         throw err;
       }
@@ -73022,7 +73197,7 @@ class StorageRetryPolicy extends BaseRequestPolicy {
   }
   shouldRetry(isPrimaryRetry, attempt, response, err) {
     if (attempt >= this.retryOptions.maxTries) {
-      logger6.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${this.retryOptions.maxTries}, no further try.`);
+      logger7.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${this.retryOptions.maxTries}, no further try.`);
       return false;
     }
     const retriableErrors = [
@@ -73039,7 +73214,7 @@ class StorageRetryPolicy extends BaseRequestPolicy {
     if (err) {
       for (const retriableError of retriableErrors) {
         if (err.name.toUpperCase().includes(retriableError) || err.message.toUpperCase().includes(retriableError) || err.code && err.code.toString().toUpperCase() === retriableError) {
-          logger6.info(`RetryPolicy: Network error ${retriableError} found, will retry.`);
+          logger7.info(`RetryPolicy: Network error ${retriableError} found, will retry.`);
           return true;
         }
       }
@@ -73047,11 +73222,11 @@ class StorageRetryPolicy extends BaseRequestPolicy {
     if (response || err) {
       const statusCode = response ? response.status : err ? err.statusCode : 0;
       if (!isPrimaryRetry && statusCode === 404) {
-        logger6.info(`RetryPolicy: Secondary access with 404, will retry.`);
+        logger7.info(`RetryPolicy: Secondary access with 404, will retry.`);
         return true;
       }
       if (statusCode === 503 || statusCode === 500) {
-        logger6.info(`RetryPolicy: Will retry for status code ${statusCode}.`);
+        logger7.info(`RetryPolicy: Will retry for status code ${statusCode}.`);
         return true;
       }
     }
@@ -73069,7 +73244,7 @@ class StorageRetryPolicy extends BaseRequestPolicy {
       }
     }
     if (err?.code === "PARSE_ERROR" && err?.message.startsWith(`Error "Error: Unclosed root tag`)) {
-      logger6.info("RetryPolicy: Incomplete XML response likely due to service timeout, will retry.");
+      logger7.info("RetryPolicy: Incomplete XML response likely due to service timeout, will retry.");
       return true;
     }
     return false;
@@ -73088,7 +73263,7 @@ class StorageRetryPolicy extends BaseRequestPolicy {
     } else {
       delayTimeInMs = Math.random() * 1000;
     }
-    logger6.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
+    logger7.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
     return delay3(delayTimeInMs, abortSignal, RETRY_ABORT_ERROR);
   }
 }
@@ -73160,29 +73335,29 @@ function storageRetryPolicy(options = {}) {
   const tryTimeoutInMs = options.tryTimeoutInMs ?? DEFAULT_RETRY_OPTIONS2.tryTimeoutInMs;
   function shouldRetry({ isPrimaryRetry, attempt, response, error }) {
     if (attempt >= maxTries) {
-      logger6.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${maxTries}, no further try.`);
+      logger7.info(`RetryPolicy: Attempt(s) ${attempt} >= maxTries ${maxTries}, no further try.`);
       return false;
     }
     if (error) {
       for (const retriableError of retriableErrors) {
         if (error.name.toUpperCase().includes(retriableError) || error.message.toUpperCase().includes(retriableError) || error.code && error.code.toString().toUpperCase() === retriableError) {
-          logger6.info(`RetryPolicy: Network error ${retriableError} found, will retry.`);
+          logger7.info(`RetryPolicy: Network error ${retriableError} found, will retry.`);
           return true;
         }
       }
       if (error?.code === "PARSE_ERROR" && error?.message.startsWith(`Error "Error: Unclosed root tag`)) {
-        logger6.info("RetryPolicy: Incomplete XML response likely due to service timeout, will retry.");
+        logger7.info("RetryPolicy: Incomplete XML response likely due to service timeout, will retry.");
         return true;
       }
     }
     if (response || error) {
       const statusCode = response?.status ?? error?.statusCode ?? 0;
       if (!isPrimaryRetry && statusCode === 404) {
-        logger6.info(`RetryPolicy: Secondary access with 404, will retry.`);
+        logger7.info(`RetryPolicy: Secondary access with 404, will retry.`);
         return true;
       }
       if (statusCode === 503 || statusCode === 500) {
-        logger6.info(`RetryPolicy: Will retry for status code ${statusCode}.`);
+        logger7.info(`RetryPolicy: Will retry for status code ${statusCode}.`);
         return true;
       }
     }
@@ -73215,7 +73390,7 @@ function storageRetryPolicy(options = {}) {
     } else {
       delayTimeInMs = Math.random() * 1000;
     }
-    logger6.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
+    logger7.info(`RetryPolicy: Delay for ${delayTimeInMs}ms`);
     return delayTimeInMs;
   }
   return {
@@ -73237,15 +73412,15 @@ function storageRetryPolicy(options = {}) {
         response = undefined;
         error = undefined;
         try {
-          logger6.info(`RetryPolicy: =====> Try=${attempt} ${isPrimaryRetry ? "Primary" : "Secondary"}`);
+          logger7.info(`RetryPolicy: =====> Try=${attempt} ${isPrimaryRetry ? "Primary" : "Secondary"}`);
           response = await next(request);
           secondaryHas404 = secondaryHas404 || !isPrimaryRetry && response.status === 404;
         } catch (e) {
-          if (isRestError6(e)) {
-            logger6.error(`RetryPolicy: Caught error, message: ${e.message}, code: ${e.code}`);
+          if (isRestError5(e)) {
+            logger7.error(`RetryPolicy: Caught error, message: ${e.message}, code: ${e.code}`);
             error = e;
           } else {
-            logger6.error(`RetryPolicy: Caught error, message: ${getErrorMessage(e)}`);
+            logger7.error(`RetryPolicy: Caught error, message: ${getErrorMessage(e)}`);
             throw e;
           }
         }
@@ -73395,7 +73570,7 @@ class UserDelegationKeyCredential {
   }
 }
 // node_modules/@azure/storage-blob/dist/esm/utils/constants.js
-var SDK_VERSION3 = "12.31.0";
+var SDK_VERSION5 = "12.31.0";
 var SERVICE_VERSION = "2026-02-06";
 var BLOCK_BLOB_MAX_UPLOAD_BLOB_BYTES = 256 * 1024 * 1024;
 var BLOCK_BLOB_MAX_STAGE_BLOCK_BYTES = 4000 * 1024 * 1024;
@@ -73642,7 +73817,7 @@ function getCoreClientOptions(pipeline) {
   }
   let corePipeline = pipeline._corePipeline;
   if (!corePipeline) {
-    const packageDetails = `azsdk-js-azure-storage-blob/${SDK_VERSION3}`;
+    const packageDetails = `azsdk-js-azure-storage-blob/${SDK_VERSION5}`;
     const userAgentPrefix = restOptions.userAgentOptions && restOptions.userAgentOptions.userAgentPrefix ? `${restOptions.userAgentOptions.userAgentPrefix} ${packageDetails}` : `${packageDetails}`;
     corePipeline = createClientPipeline({
       ...restOptions,
@@ -86804,7 +86979,7 @@ class StorageClient2 {
 // node_modules/@azure/storage-blob/dist/esm/utils/tracing.js
 var tracingClient = createTracingClient({
   packageName: "@azure/storage-blob",
-  packageVersion: SDK_VERSION3,
+  packageVersion: SDK_VERSION5,
   namespace: "Microsoft.Storage"
 });
 
@@ -97697,5 +97872,5 @@ export {
   run
 };
 
-//# debugId=6B134DECF34711EE64756E2164756E21
+//# debugId=49797358FB5223C964756E2164756E21
 //# sourceMappingURL=index.js.map
