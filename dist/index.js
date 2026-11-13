@@ -34975,7 +34975,7 @@ var require_response2 = __commonJS(function(exports, module) {
 var require_package3 = __commonJS(function(exports, module) {
   module.exports = {
     name: "minipass-fetch",
-    version: "6.0.0",
+    version: "6.0.1",
     description: "An implementation of window.fetch in Node.js using Minipass streams",
     license: "MIT",
     main: "lib/index.js",
@@ -34999,8 +34999,8 @@ var require_package3 = __commonJS(function(exports, module) {
       ]
     },
     devDependencies: {
-      "@npmcli/eslint-config": "^5.0.0",
-      "@npmcli/template-oss": "5.0.0",
+      "@npmcli/eslint-config": "^7.0.0",
+      "@npmcli/template-oss": "5.1.1",
       "@ungap/url-search-params": "^0.2.2",
       "abort-controller": "^3.0.0",
       "abortcontroller-polyfill": "~1.7.3",
@@ -35039,7 +35039,7 @@ var require_package3 = __commonJS(function(exports, module) {
     author: "GitHub Inc.",
     templateOSS: {
       "//@npmcli/template-oss": "This file is partially managed by @npmcli/template-oss. Edits may be overwritten.",
-      version: "5.0.0",
+      version: "5.1.1",
       publish: "true"
     }
   };
@@ -35283,6 +35283,15 @@ var require_lib4 = __commonJS(function(exports, module) {
   var { getNodeRequestOptions } = Request;
   var FetchError = require_fetch_error();
   var AbortError = require_abort_error();
+  var acceptsEncoding = (headers, encoding) => {
+    const encodings = new Headers(headers).get("Accept-Encoding").toLowerCase().split(",").map((value) => value.trim().split(/\s*;\s*/));
+    const preference = encodings.find(([name]) => name === encoding) || encodings.find(([name]) => name === "*");
+    if (!preference) {
+      return false;
+    }
+    const [, weight = "q=1"] = preference;
+    return preference.length <= 2 && /^q=(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)$/.test(weight) && Number(weight.slice(2)) > 0;
+  };
   var fetch2 = async (url, opts) => {
     if (/^data:/.test(url)) {
       const request = new Request(url, opts);
@@ -35475,7 +35484,7 @@ var require_lib4 = __commonJS(function(exports, module) {
           });
           return;
         }
-        if (codings === "br") {
+        if (codings === "br" && acceptsEncoding(options.headers, "br")) {
           try {
             var decoder = new zlib.BrotliDecompress;
           } catch (err) {
@@ -97872,5 +97881,5 @@ export {
   run
 };
 
-//# debugId=49797358FB5223C964756E2164756E21
+//# debugId=6BDB12506CA2F6DE64756E2164756E21
 //# sourceMappingURL=index.js.map
