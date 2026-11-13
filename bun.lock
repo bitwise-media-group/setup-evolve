@@ -195,7 +195,7 @@
 
     "minipass-collect": ["minipass-collect@2.0.1", "", { "dependencies": { "minipass": "^7.0.3" } }, "sha512-D7V8PO9oaz7PWGLbCACuI1qEOsq7UKfLotx/C0Aet43fCUB/wfQ7DYeq2oR/svFJGYDHPr38SHATeaj/ZoKHKw=="],
 
-    "minipass-fetch": ["minipass-fetch@6.0.0", "", { "dependencies": { "minipass": "^7.0.3", "minipass-sized": "^2.0.0", "minizlib": "^3.0.1" }, "optionalDependencies": { "iconv-lite": "^0.7.2" } }, "sha512-AWI8bKapGmgx/J0E6IGYSKj8TiHebZkmKWSs8raPSw8KXwgEAJ+Bw3+LSdXHR6T/RHKAWCOYk2MiLrYluaUU6w=="],
+    "minipass-fetch": ["minipass-fetch@6.0.1", "", { "dependencies": { "minipass": "^7.0.3", "minipass-sized": "^2.0.0", "minizlib": "^3.0.1" }, "optionalDependencies": { "iconv-lite": "^0.7.2" } }, "sha512-wV03kbBre0q+NJLfcUswkG+6vGn/atIdXOMiD0uKIqdWpevHiCFg3ML9V8jolPoKM7H/kmDV9Xsk0j7/FDRyhA=="],
 
     "minipass-flush": ["minipass-flush@1.0.7", "", { "dependencies": { "minipass": "^3.0.0" } }, "sha512-TbqTz9cUwWyHS2Dy89P3ocAGUGxKjjLuR9z8w4WUTGAVgEj17/4nhgo2Du56i0Fm3Pm30g4iA8Lcqctc76jCzA=="],
 
