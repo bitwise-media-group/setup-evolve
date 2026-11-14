@@ -51643,14 +51643,14 @@ var require_commonjs6 = __commonJS(function(exports) {
 // node_modules/brace-expansion/dist/commonjs/index.js
 var require_commonjs7 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
-  exports.EXPANSION_MAX_REWRITES = exports.EXPANSION_MAX_DEPTH = exports.EXPANSION_MAX_LENGTH = exports.EXPANSION_MAX = undefined;
+  exports.EXPANSION_MAX_STEPS = exports.EXPANSION_MAX_REWRITES = exports.EXPANSION_MAX_DEPTH = exports.EXPANSION_MAX_LENGTH = exports.EXPANSION_MAX = undefined;
   exports.expand = expand;
   var balanced_match_1 = require_commonjs6();
-  var escSlash = "\x00SLASH" + Math.random() + "\x00";
-  var escOpen = "\x00OPEN" + Math.random() + "\x00";
-  var escClose = "\x00CLOSE" + Math.random() + "\x00";
-  var escComma = "\x00COMMA" + Math.random() + "\x00";
-  var escPeriod = "\x00PERIOD" + Math.random() + "\x00";
+  var escSlash = "\x00SLASH" + Math.random().toFixed(16) + "\x00";
+  var escOpen = "\x00OPEN" + Math.random().toFixed(16) + "\x00";
+  var escClose = "\x00CLOSE" + Math.random().toFixed(16) + "\x00";
+  var escComma = "\x00COMMA" + Math.random().toFixed(16) + "\x00";
+  var escPeriod = "\x00PERIOD" + Math.random().toFixed(16) + "\x00";
   var escSlashPattern = new RegExp(escSlash, "g");
   var escOpenPattern = new RegExp(escOpen, "g");
   var escClosePattern = new RegExp(escClose, "g");
@@ -51665,6 +51665,8 @@ var require_commonjs7 = __commonJS(function(exports) {
   exports.EXPANSION_MAX_LENGTH = 4000000;
   exports.EXPANSION_MAX_DEPTH = 1000;
   exports.EXPANSION_MAX_REWRITES = 1000;
+  exports.EXPANSION_MAX_STEPS = 20000000;
+  var CALL_STEPS = 16;
   function numeric(str) {
     return !isNaN(str) ? parseInt(str, 10) : str.charCodeAt(0);
   }
@@ -51679,11 +51681,70 @@ var require_commonjs7 = __commonJS(function(exports) {
       target.push(items[i]);
     }
   }
-  function parseCommaParts(str) {
+  function balancedWithBudget(str, masked, budget) {
+    if (budget.remaining < 0) {
+      return;
+    }
+    const r = (0, balanced_match_1.range)("{", "}", masked);
+    const unmatched = r !== undefined && masked.indexOf("{") < r[0];
+    budget.remaining -= r && !unmatched ? r[1] + 1 : str.length;
+    if (!r || budget.remaining < 0) {
+      return;
+    }
+    return {
+      end: r[1],
+      pre: str.slice(0, r[0]),
+      body: str.slice(r[0] + 1, r[1]),
+      post: str.slice(r[1] + 1),
+      unmatched
+    };
+  }
+  function maskUnmatchedOpens(masked, budget) {
+    budget.remaining -= masked.length;
+    const open = [];
+    for (let i = 0;i < masked.length; i++) {
+      const c = masked.charCodeAt(i);
+      if (c === 123) {
+        open.push(i);
+      } else if (c === 125 && open.length) {
+        open.pop();
+      }
+    }
+    let out = "";
+    let last = 0;
+    for (let i = 0;i < open.length; i++) {
+      const at = open[i];
+      out += masked.slice(last, at) + "\x00";
+      last = at + 1;
+    }
+    return out + masked.slice(last);
+  }
+  function commaSetFollows(str, budget) {
+    budget.remaining -= str.length;
+    if (budget.remaining < 0) {
+      return false;
+    }
+    let close = false;
+    for (let i = str.length - 1;i >= 0; i--) {
+      const c = str.charCodeAt(i);
+      if (c === 125) {
+        close = true;
+      } else if (c === 10 || c === 13 || c === 8232 || c === 8233) {
+        close = false;
+      } else if (c === 44 && close && str.charCodeAt(i + 1) !== 44) {
+        return true;
+      }
+    }
+    return false;
+  }
+  function parseCommaParts(str, budget) {
     const parts = [];
     let carry = "";
     for (;; ) {
-      const m = (0, balanced_match_1.balanced)("{", "}", str);
+      const m = balancedWithBudget(str, str, budget);
+      if (budget.remaining < 0) {
+        return;
+      }
       if (!m) {
         const tail = str.split(",");
         tail[0] = carry + tail[0];
@@ -51703,15 +51764,22 @@ var require_commonjs7 = __commonJS(function(exports) {
       str = post;
     }
   }
+  function bound(value, fallback) {
+    return value === undefined || isNaN(value) ? fallback : value;
+  }
   function expand(str, options = {}) {
     if (!str) {
       return [];
     }
-    const { max = exports.EXPANSION_MAX, maxLength = exports.EXPANSION_MAX_LENGTH, maxDepth = exports.EXPANSION_MAX_DEPTH, maxRewrites = exports.EXPANSION_MAX_REWRITES } = options;
+    const max = bound(options.max, exports.EXPANSION_MAX);
+    const maxLength = bound(options.maxLength, exports.EXPANSION_MAX_LENGTH);
+    const maxDepth = bound(options.maxDepth, exports.EXPANSION_MAX_DEPTH);
+    const maxRewrites = bound(options.maxRewrites, exports.EXPANSION_MAX_REWRITES);
+    const maxSteps = bound(options.maxSteps, exports.EXPANSION_MAX_STEPS);
     if (str.slice(0, 2) === "{}") {
       str = "\\{\\}" + str.slice(2);
     }
-    return expand_(escapeBraces(str), max, maxLength, maxDepth, 0, maxRewrites, true).map(unescapeBraces);
+    return expand_(escapeBraces(str), max, maxLength, maxDepth, 0, maxRewrites, { remaining: maxSteps }, true).map(unescapeBraces);
   }
   function embrace(str) {
     return "{" + str + "}";
@@ -51725,25 +51793,33 @@ var require_commonjs7 = __commonJS(function(exports) {
   function gte(i, y) {
     return i >= y;
   }
-  function combine(acc, pre, values, max, maxLength, dropEmpties) {
+  function combine(acc, pre, values, max, maxLength, dropEmpties, budget) {
     const out = [];
     let length = 0;
-    for (let a = 0;a < acc.length; a++) {
-      for (let v = 0;v < values.length; v++) {
-        if (out.length >= max)
-          return out;
-        const expansion = acc[a] + pre + values[v];
-        if (dropEmpties && !expansion)
-          continue;
-        if (length + expansion.length > maxLength)
-          return out;
-        out.push(expansion);
-        length += expansion.length;
+    let nonEmpty;
+    outer:
+      for (let a = 0;a < acc.length; a++) {
+        const prefix = acc[a] + pre;
+        let vs = values;
+        if (dropEmpties && !prefix) {
+          if (!nonEmpty)
+            nonEmpty = values.filter((v) => v);
+          vs = nonEmpty;
+        }
+        for (let v = 0;v < vs.length; v++) {
+          if (out.length >= max)
+            break outer;
+          const expansion = prefix + vs[v];
+          if (length + expansion.length > maxLength)
+            break outer;
+          out.push(expansion);
+          length += expansion.length;
+        }
       }
-    }
+    budget.remaining -= out.length;
     return out;
   }
-  function expandSequence(body, isAlphaSequence, max, maxLength) {
+  function expandSequence(body, isAlphaSequence, max, maxLength, budget) {
     const n = body.split(/\.\./);
     const N = [];
     if (n[0] === undefined || n[1] === undefined) {
@@ -51760,8 +51836,13 @@ var require_commonjs7 = __commonJS(function(exports) {
       test = gte;
     }
     const pad = n.some(isPadded);
+    const cost = pad ? width : 1;
     let length = 0;
     for (let i = x;test(i, y) && N.length < max; i += incr) {
+      budget.remaining -= cost;
+      if (budget.remaining < 0) {
+        return;
+      }
       let c;
       if (isAlphaSequence) {
         c = String.fromCharCode(i);
@@ -51789,7 +51870,8 @@ var require_commonjs7 = __commonJS(function(exports) {
     }
     return N;
   }
-  function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+  function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, budget, isTop) {
+    budget.remaining -= CALL_STEPS;
     if (depth > maxDepth) {
       return [str];
     }
@@ -51797,18 +51879,24 @@ var require_commonjs7 = __commonJS(function(exports) {
     let rewrites = 0;
     let dropEmpties = false;
     let firstGroup = true;
+    let masked = str;
     for (;; ) {
-      const m = (0, balanced_match_1.balanced)("{", "}", str);
+      const m = balancedWithBudget(str, masked, budget);
       if (!m) {
-        return combine(acc, str, [""], max, maxLength, dropEmpties);
+        return combine(acc, str, [""], max, maxLength, dropEmpties, budget);
+      }
+      if (m.unmatched) {
+        masked = maskUnmatchedOpens(masked, budget);
       }
       const pre = m.pre;
+      const literal = () => combine(acc, pre + "{" + m.body + "}" + m.post, [""], max, maxLength, dropEmpties, budget);
       if (/\$$/.test(pre)) {
-        acc = combine(acc, pre + "{" + m.body + "}", [""], max, maxLength, dropEmpties && !m.post.length);
+        acc = combine(acc, pre + "{" + m.body + "}", [""], max, maxLength, dropEmpties && !m.post.length, budget);
         firstGroup = false;
         if (!m.post.length)
           break;
         str = m.post;
+        masked = masked.slice(m.end + 1);
         continue;
       }
       const isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
@@ -51816,13 +51904,14 @@ var require_commonjs7 = __commonJS(function(exports) {
       const isSequence = isNumericSequence || isAlphaSequence;
       const isOptions = m.body.indexOf(",") >= 0;
       if (!isSequence && !isOptions) {
-        if (rewrites < maxRewrites && m.post.match(/,(?!,).*\}/)) {
+        if (rewrites < maxRewrites && commaSetFollows(m.post, budget)) {
           rewrites++;
           str = m.pre + "{" + m.body + escClose + m.post;
+          masked = masked.slice(0, m.end) + escClose + masked.slice(m.end + 1);
           isTop = true;
           continue;
         }
-        return combine(acc, pre + "{" + m.body + "}" + m.post, [""], max, maxLength, dropEmpties);
+        return literal();
       }
       if (firstGroup) {
         dropEmpties = isTop && !isSequence;
@@ -51830,16 +51919,30 @@ var require_commonjs7 = __commonJS(function(exports) {
       }
       let values;
       if (isSequence) {
-        values = expandSequence(m.body, isAlphaSequence, max, maxLength);
+        values = expandSequence(m.body, isAlphaSequence, max, maxLength, budget);
+        if (!values) {
+          return literal();
+        }
       } else {
-        let n = parseCommaParts(m.body);
+        let n = parseCommaParts(m.body, budget);
+        if (!n) {
+          return literal();
+        }
         if (n.length === 1 && n[0] !== undefined) {
-          n = expand_(n[0], max, maxLength, maxDepth, depth + 1, maxRewrites, false).map(embrace);
+          n = expand_(n[0], max, maxLength, maxDepth, depth + 1, maxRewrites, budget, false).map(embrace);
+          if (budget.remaining < 0) {
+            return literal();
+          }
           if (n.length === 1) {
-            acc = combine(acc, pre + n[0], [""], max, maxLength, dropEmpties && !m.post.length);
+            const next = combine(acc, pre + n[0], [""], max, maxLength, dropEmpties && !m.post.length, budget);
+            if (budget.remaining < 0) {
+              return literal();
+            }
+            acc = next;
             if (!m.post.length)
               break;
             str = m.post;
+            masked = masked.slice(m.end + 1);
             continue;
           }
         }
@@ -51853,7 +51956,10 @@ var require_commonjs7 = __commonJS(function(exports) {
         let valuesLength = 0;
         outer:
           for (let j = 0;j < n.length; j++) {
-            const expanded = expand_(n[j], max, maxLength, maxDepth, depth + 1, maxRewrites, false);
+            const expanded = expand_(n[j], max, maxLength, maxDepth, depth + 1, maxRewrites, budget, false);
+            if (budget.remaining < 0) {
+              return literal();
+            }
             for (let k = 0;k < expanded.length; k++) {
               const v = expanded[k];
               if (dropsEmpties && !v)
@@ -51866,10 +51972,15 @@ var require_commonjs7 = __commonJS(function(exports) {
             }
           }
       }
-      acc = combine(acc, pre, values, max, maxLength, dropEmpties && !m.post.length);
+      const next = combine(acc, pre, values, max, maxLength, dropEmpties && !m.post.length, budget);
+      if (budget.remaining < 0) {
+        return literal();
+      }
+      acc = next;
       if (!m.post.length)
         break;
       str = m.post;
+      masked = masked.slice(m.end + 1);
     }
     return acc;
   }
@@ -59598,22 +59709,6 @@ import * as path9 from "path";
 import assert3 from "assert";
 
 // node_modules/balanced-match/dist/esm/index.js
-var balanced = (a, b, str) => {
-  const ma = a instanceof RegExp ? maybeMatch(a, str) : a;
-  const mb = b instanceof RegExp ? maybeMatch(b, str) : b;
-  const r = ma !== null && mb != null && range(ma, mb, str);
-  return r && {
-    start: r[0],
-    end: r[1],
-    pre: str.slice(0, r[0]),
-    body: str.slice(r[0] + ma.length, r[1]),
-    post: str.slice(r[1] + mb.length)
-  };
-};
-var maybeMatch = (reg, str) => {
-  const m = str.match(reg);
-  return m ? m[0] : null;
-};
 var range = (a, b, str) => {
   let begs, beg, left, right = undefined, result;
   let ai = str.indexOf(a);
@@ -59651,11 +59746,11 @@ var range = (a, b, str) => {
 };
 
 // node_modules/brace-expansion/dist/esm/index.js
-var escSlash = "\x00SLASH" + Math.random() + "\x00";
-var escOpen = "\x00OPEN" + Math.random() + "\x00";
-var escClose = "\x00CLOSE" + Math.random() + "\x00";
-var escComma = "\x00COMMA" + Math.random() + "\x00";
-var escPeriod = "\x00PERIOD" + Math.random() + "\x00";
+var escSlash = "\x00SLASH" + Math.random().toFixed(16) + "\x00";
+var escOpen = "\x00OPEN" + Math.random().toFixed(16) + "\x00";
+var escClose = "\x00CLOSE" + Math.random().toFixed(16) + "\x00";
+var escComma = "\x00COMMA" + Math.random().toFixed(16) + "\x00";
+var escPeriod = "\x00PERIOD" + Math.random().toFixed(16) + "\x00";
 var escSlashPattern = new RegExp(escSlash, "g");
 var escOpenPattern = new RegExp(escOpen, "g");
 var escClosePattern = new RegExp(escClose, "g");
@@ -59670,6 +59765,8 @@ var EXPANSION_MAX = 1e5;
 var EXPANSION_MAX_LENGTH = 4000000;
 var EXPANSION_MAX_DEPTH = 1000;
 var EXPANSION_MAX_REWRITES = 1000;
+var EXPANSION_MAX_STEPS = 20000000;
+var CALL_STEPS = 16;
 function numeric(str) {
   return !isNaN(str) ? parseInt(str, 10) : str.charCodeAt(0);
 }
@@ -59684,11 +59781,70 @@ function pushAll(target, items) {
     target.push(items[i]);
   }
 }
-function parseCommaParts(str) {
+function balancedWithBudget(str, masked, budget) {
+  if (budget.remaining < 0) {
+    return;
+  }
+  const r = range("{", "}", masked);
+  const unmatched = r !== undefined && masked.indexOf("{") < r[0];
+  budget.remaining -= r && !unmatched ? r[1] + 1 : str.length;
+  if (!r || budget.remaining < 0) {
+    return;
+  }
+  return {
+    end: r[1],
+    pre: str.slice(0, r[0]),
+    body: str.slice(r[0] + 1, r[1]),
+    post: str.slice(r[1] + 1),
+    unmatched
+  };
+}
+function maskUnmatchedOpens(masked, budget) {
+  budget.remaining -= masked.length;
+  const open = [];
+  for (let i = 0;i < masked.length; i++) {
+    const c = masked.charCodeAt(i);
+    if (c === 123) {
+      open.push(i);
+    } else if (c === 125 && open.length) {
+      open.pop();
+    }
+  }
+  let out = "";
+  let last = 0;
+  for (let i = 0;i < open.length; i++) {
+    const at = open[i];
+    out += masked.slice(last, at) + "\x00";
+    last = at + 1;
+  }
+  return out + masked.slice(last);
+}
+function commaSetFollows(str, budget) {
+  budget.remaining -= str.length;
+  if (budget.remaining < 0) {
+    return false;
+  }
+  let close = false;
+  for (let i = str.length - 1;i >= 0; i--) {
+    const c = str.charCodeAt(i);
+    if (c === 125) {
+      close = true;
+    } else if (c === 10 || c === 13 || c === 8232 || c === 8233) {
+      close = false;
+    } else if (c === 44 && close && str.charCodeAt(i + 1) !== 44) {
+      return true;
+    }
+  }
+  return false;
+}
+function parseCommaParts(str, budget) {
   const parts = [];
   let carry = "";
   for (;; ) {
-    const m = balanced("{", "}", str);
+    const m = balancedWithBudget(str, str, budget);
+    if (budget.remaining < 0) {
+      return;
+    }
     if (!m) {
       const tail = str.split(",");
       tail[0] = carry + tail[0];
@@ -59708,15 +59864,22 @@ function parseCommaParts(str) {
     str = post;
   }
 }
+function bound(value, fallback) {
+  return value === undefined || isNaN(value) ? fallback : value;
+}
 function expand(str, options = {}) {
   if (!str) {
     return [];
   }
-  const { max = EXPANSION_MAX, maxLength = EXPANSION_MAX_LENGTH, maxDepth = EXPANSION_MAX_DEPTH, maxRewrites = EXPANSION_MAX_REWRITES } = options;
+  const max = bound(options.max, EXPANSION_MAX);
+  const maxLength = bound(options.maxLength, EXPANSION_MAX_LENGTH);
+  const maxDepth = bound(options.maxDepth, EXPANSION_MAX_DEPTH);
+  const maxRewrites = bound(options.maxRewrites, EXPANSION_MAX_REWRITES);
+  const maxSteps = bound(options.maxSteps, EXPANSION_MAX_STEPS);
   if (str.slice(0, 2) === "{}") {
     str = "\\{\\}" + str.slice(2);
   }
-  return expand_(escapeBraces(str), max, maxLength, maxDepth, 0, maxRewrites, true).map(unescapeBraces);
+  return expand_(escapeBraces(str), max, maxLength, maxDepth, 0, maxRewrites, { remaining: maxSteps }, true).map(unescapeBraces);
 }
 function embrace(str) {
   return "{" + str + "}";
@@ -59730,25 +59893,33 @@ function lte(i, y) {
 function gte(i, y) {
   return i >= y;
 }
-function combine(acc, pre, values, max, maxLength, dropEmpties) {
+function combine(acc, pre, values, max, maxLength, dropEmpties, budget) {
   const out = [];
   let length = 0;
-  for (let a = 0;a < acc.length; a++) {
-    for (let v = 0;v < values.length; v++) {
-      if (out.length >= max)
-        return out;
-      const expansion = acc[a] + pre + values[v];
-      if (dropEmpties && !expansion)
-        continue;
-      if (length + expansion.length > maxLength)
-        return out;
-      out.push(expansion);
-      length += expansion.length;
+  let nonEmpty;
+  outer:
+    for (let a = 0;a < acc.length; a++) {
+      const prefix = acc[a] + pre;
+      let vs = values;
+      if (dropEmpties && !prefix) {
+        if (!nonEmpty)
+          nonEmpty = values.filter((v) => v);
+        vs = nonEmpty;
+      }
+      for (let v = 0;v < vs.length; v++) {
+        if (out.length >= max)
+          break outer;
+        const expansion = prefix + vs[v];
+        if (length + expansion.length > maxLength)
+          break outer;
+        out.push(expansion);
+        length += expansion.length;
+      }
     }
-  }
+  budget.remaining -= out.length;
   return out;
 }
-function expandSequence(body, isAlphaSequence, max, maxLength) {
+function expandSequence(body, isAlphaSequence, max, maxLength, budget) {
   const n = body.split(/\.\./);
   const N = [];
   if (n[0] === undefined || n[1] === undefined) {
@@ -59765,8 +59936,13 @@ function expandSequence(body, isAlphaSequence, max, maxLength) {
     test = gte;
   }
   const pad = n.some(isPadded);
+  const cost = pad ? width : 1;
   let length = 0;
   for (let i = x;test(i, y) && N.length < max; i += incr) {
+    budget.remaining -= cost;
+    if (budget.remaining < 0) {
+      return;
+    }
     let c;
     if (isAlphaSequence) {
       c = String.fromCharCode(i);
@@ -59794,7 +59970,8 @@ function expandSequence(body, isAlphaSequence, max, maxLength) {
   }
   return N;
 }
-function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, budget, isTop) {
+  budget.remaining -= CALL_STEPS;
   if (depth > maxDepth) {
     return [str];
   }
@@ -59802,18 +59979,24 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
   let rewrites = 0;
   let dropEmpties = false;
   let firstGroup = true;
+  let masked = str;
   for (;; ) {
-    const m = balanced("{", "}", str);
+    const m = balancedWithBudget(str, masked, budget);
     if (!m) {
-      return combine(acc, str, [""], max, maxLength, dropEmpties);
+      return combine(acc, str, [""], max, maxLength, dropEmpties, budget);
+    }
+    if (m.unmatched) {
+      masked = maskUnmatchedOpens(masked, budget);
     }
     const pre = m.pre;
+    const literal = () => combine(acc, pre + "{" + m.body + "}" + m.post, [""], max, maxLength, dropEmpties, budget);
     if (/\$$/.test(pre)) {
-      acc = combine(acc, pre + "{" + m.body + "}", [""], max, maxLength, dropEmpties && !m.post.length);
+      acc = combine(acc, pre + "{" + m.body + "}", [""], max, maxLength, dropEmpties && !m.post.length, budget);
       firstGroup = false;
       if (!m.post.length)
         break;
       str = m.post;
+      masked = masked.slice(m.end + 1);
       continue;
     }
     const isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
@@ -59821,13 +60004,14 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
     const isSequence = isNumericSequence || isAlphaSequence;
     const isOptions = m.body.indexOf(",") >= 0;
     if (!isSequence && !isOptions) {
-      if (rewrites < maxRewrites && m.post.match(/,(?!,).*\}/)) {
+      if (rewrites < maxRewrites && commaSetFollows(m.post, budget)) {
         rewrites++;
         str = m.pre + "{" + m.body + escClose + m.post;
+        masked = masked.slice(0, m.end) + escClose + masked.slice(m.end + 1);
         isTop = true;
         continue;
       }
-      return combine(acc, pre + "{" + m.body + "}" + m.post, [""], max, maxLength, dropEmpties);
+      return literal();
     }
     if (firstGroup) {
       dropEmpties = isTop && !isSequence;
@@ -59835,16 +60019,30 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
     }
     let values;
     if (isSequence) {
-      values = expandSequence(m.body, isAlphaSequence, max, maxLength);
+      values = expandSequence(m.body, isAlphaSequence, max, maxLength, budget);
+      if (!values) {
+        return literal();
+      }
     } else {
-      let n = parseCommaParts(m.body);
+      let n = parseCommaParts(m.body, budget);
+      if (!n) {
+        return literal();
+      }
       if (n.length === 1 && n[0] !== undefined) {
-        n = expand_(n[0], max, maxLength, maxDepth, depth + 1, maxRewrites, false).map(embrace);
+        n = expand_(n[0], max, maxLength, maxDepth, depth + 1, maxRewrites, budget, false).map(embrace);
+        if (budget.remaining < 0) {
+          return literal();
+        }
         if (n.length === 1) {
-          acc = combine(acc, pre + n[0], [""], max, maxLength, dropEmpties && !m.post.length);
+          const next = combine(acc, pre + n[0], [""], max, maxLength, dropEmpties && !m.post.length, budget);
+          if (budget.remaining < 0) {
+            return literal();
+          }
+          acc = next;
           if (!m.post.length)
             break;
           str = m.post;
+          masked = masked.slice(m.end + 1);
           continue;
         }
       }
@@ -59858,7 +60056,10 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
       let valuesLength = 0;
       outer:
         for (let j = 0;j < n.length; j++) {
-          const expanded = expand_(n[j], max, maxLength, maxDepth, depth + 1, maxRewrites, false);
+          const expanded = expand_(n[j], max, maxLength, maxDepth, depth + 1, maxRewrites, budget, false);
+          if (budget.remaining < 0) {
+            return literal();
+          }
           for (let k = 0;k < expanded.length; k++) {
             const v = expanded[k];
             if (dropsEmpties && !v)
@@ -59871,10 +60072,15 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
           }
         }
     }
-    acc = combine(acc, pre, values, max, maxLength, dropEmpties && !m.post.length);
+    const next = combine(acc, pre, values, max, maxLength, dropEmpties && !m.post.length, budget);
+    if (budget.remaining < 0) {
+      return literal();
+    }
+    acc = next;
     if (!m.post.length)
       break;
     str = m.post;
+    masked = masked.slice(m.end + 1);
   }
   return acc;
 }
@@ -97881,5 +98087,5 @@ export {
   run
 };
 
-//# debugId=6BDB12506CA2F6DE64756E2164756E21
+//# debugId=7C5535B708A4E58164756E2164756E21
 //# sourceMappingURL=index.js.map
