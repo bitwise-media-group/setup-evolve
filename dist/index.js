@@ -44624,12 +44624,12 @@ var require_index_min2 = __commonJS(function(exports) {
       platform;
       mmopts;
       slashRoot;
-      constructor(t, { nobrace: e, nocase: s, noext: i, noglobstar: n, normalize: o, platform: h = ur, root: a, windowsPathsNoEscape: l, allowWindowsEscape: c }, u) {
-        this.relative = [], this.absolute = [], this.relativeChildren = [], this.absoluteChildren = [], this.platform = h, l = !!l || c === false, this.mmopts = { dot: true, nobrace: e, nocase: s, noext: i, noglobstar: n, normalize: o, optimizationLevel: 2, platform: h, nocomment: true, nonegate: true, windowsPathsNoEscape: l };
-        let f = u?.resolve(a ?? "/").fullpath() ?? "/";
-        this.slashRoot = (0, es.escape)(f.replace(/\\/g, "/").replace(/\/$/, ""), { windowsPathsNoEscape: l });
-        for (let p of t)
-          this.add(p);
+      constructor(t, { nobrace: e, nocase: s, noext: i, noglobstar: n, normalize: o, platform: h = ur, root: a, windowsPathsNoEscape: l, allowWindowsEscape: c, braceExpandMax: u = 1e4 }, f) {
+        this.relative = [], this.absolute = [], this.relativeChildren = [], this.absoluteChildren = [], this.platform = h, l = !!l || c === false, this.mmopts = { braceExpandMax: u, dot: true, nobrace: e, nocase: s, noext: i, noglobstar: n, normalize: o, optimizationLevel: 2, platform: h, nocomment: true, nonegate: true, windowsPathsNoEscape: l };
+        let p = f?.resolve(a ?? "/").fullpath() ?? "/";
+        this.slashRoot = (0, es.escape)(p.replace(/\\/g, "/").replace(/\/$/, ""), { magicalBraces: true, windowsPathsNoEscape: l });
+        for (let g of t)
+          this.add(g);
       }
       add(t) {
         let e = new es.Minimatch(t, this.mmopts);
@@ -98742,5 +98742,5 @@ export {
   run
 };
 
-//# debugId=A7B3F6037D6F25BA64756E2164756E21
+//# debugId=F133FED94550A29064756E2164756E21
 //# sourceMappingURL=index.js.map
