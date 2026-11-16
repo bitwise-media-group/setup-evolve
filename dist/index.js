@@ -68670,7 +68670,7 @@ function scanAttributeTokens(attrStr) {
     if (i >= len)
       break;
     if (attrStr[i] === "=") {
-      i = tokenStart + 1;
+      i++;
       continue;
     }
     const leadingWs = attrStr.slice(tokenStart, i);
@@ -71374,7 +71374,10 @@ function resolveNameSpace(tagname) {
   }
   return tagname;
 }
-var attrsRegx = new RegExp(`([^\\s=]+)\\s*(=\\s*(['"])([\\s\\S]*?)\\3)?`, "gm");
+var attrsRegx = /([^\s=]+)\s*(=\s*(?:"([^"]*)"|'([^']*)'))?/gm;
+function attrValue(match) {
+  return match[3] !== undefined ? match[3] : match[4];
+}
 function buildAttributesMap(attrStr, jPath, tagName, force = false) {
   const options = this.options;
   if (force === true || options.ignoreAttributes !== true && typeof attrStr === "string") {
@@ -71386,7 +71389,7 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
     const rawAttrsForMatcher = {};
     for (let i = 0;i < len; i++) {
       const attrName = this.resolveNameSpace(matches[i][1]);
-      const oldVal = matches[i][4];
+      const oldVal = attrValue(matches[i]);
       if (attrName.length && oldVal !== undefined) {
         let val = oldVal;
         if (options.trimValues)
@@ -71412,7 +71415,7 @@ function buildAttributesMap(attrStr, jPath, tagName, force = false) {
           aName = options.transformAttributeName(aName);
         }
         aName = sanitizeName(aName, options);
-        if (matches[i][4] !== undefined) {
+        if (attrValue(matches[i]) !== undefined) {
           const oldVal = processedVals[i];
           const newVal = options.attributeValueProcessor(attrName, oldVal, jPathStr);
           if (newVal === null || newVal === undefined) {
@@ -71731,7 +71734,6 @@ function isItStopNode() {
   return this.matcher.matchesAny(this.stopNodeExpressionsSet);
 }
 function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
-  let attrBoundary = 0;
   const len = xmlData.length;
   const closeCode0 = closingChar.charCodeAt(0);
   const closeCode1 = closingChar.length > 1 ? closingChar.charCodeAt(1) : -1;
@@ -71739,11 +71741,10 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
   let segmentStart = i;
   for (let index = i;index < len; index++) {
     const code = xmlData.charCodeAt(index);
-    if (attrBoundary) {
-      if (code === attrBoundary)
-        attrBoundary = 0;
-    } else if (code === 34 || code === 39) {
-      attrBoundary = code;
+    if (code === 34 || code === 39) {
+      index = xmlData.indexOf(xmlData[index], index + 1);
+      if (index === -1)
+        return;
     } else if (code === closeCode0) {
       if (closeCode1 !== -1) {
         if (xmlData.charCodeAt(index + 1) === closeCode1) {
@@ -71754,7 +71755,7 @@ function tagExpWithClosingIndex(xmlData, i, closingChar = ">") {
         result += xmlData.substring(segmentStart, index);
         return { data: result, index };
       }
-    } else if (code === 9 && !attrBoundary) {
+    } else if (code === 9) {
       result += xmlData.substring(segmentStart, index) + " ";
       segmentStart = index + 1;
     }
@@ -72078,6 +72079,19 @@ function safeCdata(val) {
 function escapeAttribute(val) {
   return valToStr(val).replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
+function resolveName(name, isAttribute, options, matcher, validator) {
+  if (!options.sanitizeName)
+    return name;
+  const isPI = !isAttribute && name[0] === "?";
+  const bare = isPI ? name.slice(1) : name;
+  if (validator(bare))
+    return name;
+  const result = options.sanitizeName(bare, { isAttribute, matcher: matcher.readOnly() });
+  if (typeof result !== "string" || !validator(result)) {
+    throw new Error(`sanitizeName returned an invalid XML name for "${bare}"`);
+  }
+  return isPI ? "?" + result : result;
+}
 
 // node_modules/fast-xml-builder/src/orderedJs2Xml.js
 var EOL7 = `
@@ -72096,13 +72110,6 @@ function detectXmlVersionFromArray(jArray, options) {
     }
   }
   return "1.0";
-}
-function resolveTagName(name, isAttribute, options, matcher, qNameValidator) {
-  if (!options.sanitizeName)
-    return name;
-  if (qNameValidator(name))
-    return name;
-  return options.sanitizeName(name, { isAttribute, matcher: matcher.readOnly() });
 }
 function toXml(jArray, options) {
   let indentation = "";
@@ -72144,8 +72151,8 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
     const rawTagName = propName2(tagObj);
     if (rawTagName === undefined)
       continue;
-    const isSpecialName = rawTagName === options.textNodeName || rawTagName === options.cdataPropName || rawTagName === options.commentPropName || rawTagName[0] === "?";
-    const tagName = isSpecialName ? rawTagName : resolveTagName(rawTagName, false, options, matcher, qNameValidator);
+    const isSpecialName = rawTagName === options.textNodeName || rawTagName === options.cdataPropName || rawTagName === options.commentPropName;
+    const tagName = isSpecialName ? rawTagName : resolveName(rawTagName, false, options, matcher, qNameValidator);
     const attrValues = extractAttributeValues(tagObj[":@"], options);
     matcher.push(tagName, attrValues);
     const isStopNode = checkStopNode(matcher, stopNodeExpressions);
@@ -72196,7 +72203,7 @@ function arrToStr(arr, options, indentation, matcher, stopNodeExpressions, qName
     const tagStart = indentation + `<${tagName}${attStr}`;
     let tagValue;
     if (isStopNode) {
-      tagValue = getRawContent3(tagObj[rawTagName], options);
+      tagValue = getRawContent3(tagObj[rawTagName], options, matcher.getDepth());
     } else {
       tagValue = arrToStr(tagObj[rawTagName], options, newIdentation, matcher, stopNodeExpressions, qNameValidator);
     }
@@ -72237,7 +72244,10 @@ function extractAttributeValues(attrMap, options) {
   }
   return hasAttrs ? attrValues : null;
 }
-function getRawContent3(arr, options) {
+function getRawContent3(arr, options, depth = 0) {
+  if (options.maxNestedTags && depth > options.maxNestedTags) {
+    throw new Error("Maximum nested tags exceeded");
+  }
   if (!Array.isArray(arr)) {
     if (arr !== undefined && arr !== null) {
       return valToStr(arr);
@@ -72258,7 +72268,7 @@ function getRawContent3(arr, options) {
       continue;
     } else if (tagName) {
       const attStr = attr_to_str_raw(item[":@"], options);
-      const nestedContent = getRawContent3(item[tagName], options);
+      const nestedContent = getRawContent3(item[tagName], options, depth + 1);
       if (!nestedContent || nestedContent.length === 0) {
         content += `<${tagName}${attStr}/>`;
       } else {
@@ -72301,7 +72311,7 @@ function attr_to_str(attrMap, options, isStopNode, matcher, qNameValidator) {
       if (!Object.prototype.hasOwnProperty.call(attrMap, attr))
         continue;
       const cleanAttrName = attr.substr(options.attributeNamePrefix.length);
-      const resolvedAttrName = isStopNode ? cleanAttrName : resolveTagName(cleanAttrName, true, options, matcher, qNameValidator);
+      const resolvedAttrName = isStopNode ? cleanAttrName : resolveName(cleanAttrName, true, options, matcher, qNameValidator);
       let attrVal;
       if (isStopNode) {
         attrVal = attrMap[attr];
@@ -72452,13 +72462,6 @@ function detectXmlVersionFromObj(jObj, options) {
   }
   return "1.0";
 }
-function resolveTagName2(name, isAttribute, options, matcher, qNameValidator) {
-  if (!options.sanitizeName)
-    return name;
-  if (qNameValidator(name))
-    return name;
-  return options.sanitizeName(name, { isAttribute, matcher: matcher.readOnly() });
-}
 Builder.prototype.build = function(jObj) {
   if (this.options.preserveOrder) {
     return toXml(jObj, this.options);
@@ -72485,8 +72488,8 @@ Builder.prototype.j2x = function(jObj, level, matcher, qNameValidator) {
   for (let key in jObj) {
     if (!Object.prototype.hasOwnProperty.call(jObj, key))
       continue;
-    const isSpecialKey = key === this.options.textNodeName || key === this.options.cdataPropName || key === this.options.commentPropName || this.options.attributesGroupName && key === this.options.attributesGroupName || this.isAttribute(key) || key[0] === "?";
-    const resolvedKey = isSpecialKey ? key : resolveTagName2(key, false, this.options, matcher, qNameValidator);
+    const isSpecialKey = key === this.options.textNodeName || key === this.options.cdataPropName || key === this.options.commentPropName || this.options.attributesGroupName && key === this.options.attributesGroupName || this.isAttribute(key);
+    const resolvedKey = isSpecialKey ? key : resolveName(key, false, this.options, matcher, qNameValidator);
     if (typeof jObj[key] === "undefined") {
       if (this.isAttribute(key)) {
         val += "";
@@ -72506,7 +72509,7 @@ Builder.prototype.j2x = function(jObj, level, matcher, qNameValidator) {
     } else if (typeof jObj[key] !== "object") {
       const attr = this.isAttribute(key);
       if (attr && !this.ignoreAttributesFn(attr, jPath)) {
-        const resolvedAttr = resolveTagName2(attr, true, this.options, matcher, qNameValidator);
+        const resolvedAttr = resolveName(attr, true, this.options, matcher, qNameValidator);
         attrStr += this.buildAttrPairStr(resolvedAttr, valToStr(jObj[key]), isCurrentStopNode);
       } else if (!attr) {
         if (key === this.options.textNodeName) {
@@ -72583,7 +72586,7 @@ Builder.prototype.j2x = function(jObj, level, matcher, qNameValidator) {
         const Ks = Object.keys(jObj[key]);
         const L = Ks.length;
         for (let j = 0;j < L; j++) {
-          const resolvedAttr = resolveTagName2(Ks[j], true, this.options, matcher, qNameValidator);
+          const resolvedAttr = resolveName(Ks[j], true, this.options, matcher, qNameValidator);
           attrStr += this.buildAttrPairStr(resolvedAttr, valToStr(jObj[key][Ks[j]]), isCurrentStopNode);
         }
       } else {
@@ -72608,7 +72611,7 @@ function processTextOrObjNode(object, key, level, matcher, qNameValidator) {
   matcher.push(key, attrValues);
   const isStopNode = this.checkStopNode(matcher);
   if (isStopNode) {
-    const rawContent = this.buildRawContent(object);
+    const rawContent = this.buildRawContent(object, matcher.getDepth());
     const attrStr = this.buildAttributesForStopNode(object);
     matcher.pop();
     return this.buildObjectNode(rawContent, key, attrStr, level);
@@ -72650,7 +72653,10 @@ Builder.prototype.extractAttributes = function(obj) {
   }
   return hasAttrs ? attrValues : null;
 };
-Builder.prototype.buildRawContent = function(obj) {
+Builder.prototype.buildRawContent = function(obj, depth = 0) {
+  if (this.options.maxNestedTags && depth >= this.options.maxNestedTags) {
+    throw new Error("Maximum nested tags exceeded");
+  }
   if (typeof obj === "string") {
     return obj;
   }
@@ -72676,7 +72682,7 @@ Builder.prototype.buildRawContent = function(obj) {
         if (typeof item === "string" || typeof item === "number") {
           content += `<${key}>${item}</${key}>`;
         } else if (typeof item === "object" && item !== null) {
-          const nestedContent = this.buildRawContent(item);
+          const nestedContent = this.buildRawContent(item, depth + 1);
           const nestedAttrs = this.buildAttributesForStopNode(item);
           if (nestedContent === "") {
             content += `<${key}${nestedAttrs}/>`;
@@ -72686,7 +72692,7 @@ Builder.prototype.buildRawContent = function(obj) {
         }
       }
     } else if (typeof value === "object" && value !== null) {
-      const nestedContent = this.buildRawContent(value);
+      const nestedContent = this.buildRawContent(value, depth + 1);
       const nestedAttrs = this.buildAttributesForStopNode(value);
       if (nestedContent === "") {
         content += `<${key}${nestedAttrs}/>`;
@@ -98742,5 +98748,5 @@ export {
   run
 };
 
-//# debugId=F133FED94550A29064756E2164756E21
+//# debugId=80709E8940CEE29A64756E2164756E21
 //# sourceMappingURL=index.js.map
