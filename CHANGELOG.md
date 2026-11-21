@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.4](https://github.com/bitwise-media-group/setup-evolve/compare/v1.0.3...v1.0.4) (2026-11-21)
+
+
+### Bug Fixes
+
+* **deps:** update bitwise-media-group/github-workflows action to v8.4.0 ([#277](https://github.com/bitwise-media-group/setup-evolve/issues/277)) ([698d5cf](https://github.com/bitwise-media-group/setup-evolve/commit/698d5cfc37d3ecb314d08c6c14d5ea63fbbab313))
+* **deps:** update dependency jdx/mise to v2026.11.8 ([#276](https://github.com/bitwise-media-group/setup-evolve/issues/276)) ([546961b](https://github.com/bitwise-media-group/setup-evolve/commit/546961bc6d2dd6ef02877820f117074bd961c9ef))
+* **deps:** update dependency jdx/mise to v2026.11.9 ([#280](https://github.com/bitwise-media-group/setup-evolve/issues/280)) ([bdf60d6](https://github.com/bitwise-media-group/setup-evolve/commit/bdf60d61f682f7a6ac5120223a66ff79498268a8))
+* **deps:** update jdx/mise-action action to v5.2.9 ([#279](https://github.com/bitwise-media-group/setup-evolve/issues/279)) ([ea54592](https://github.com/bitwise-media-group/setup-evolve/commit/ea5459281e82d32142bec3a21c5d7d08ab282252))
+
 ## [1.0.3](https://github.com/bitwise-media-group/setup-evolve/compare/v1.0.2...v1.0.3) (2026-11-16)
 
 
