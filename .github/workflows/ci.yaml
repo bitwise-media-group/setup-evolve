@@ -39,7 +39,7 @@ jobs:
       # The same mise and bun the reusable ci job runs (the toolchain's pin), but only
       # bun: the integration suite needs nothing else. Its own cache prefix keeps this
       # bun-only install from being restored as the ci job's full toolset.
-      - uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
           version: v2026.11.12
           # sha256 of the linux-x64 mise binary for the version above, from the release's
