@@ -53016,6 +53016,7 @@ var require_commonjs7 = __commonJS(function(exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.EXPANSION_MAX_STEPS = exports.EXPANSION_MAX_REWRITES = exports.EXPANSION_MAX_DEPTH = exports.EXPANSION_MAX_LENGTH = exports.EXPANSION_MAX = undefined;
   exports.expand = expand;
+  exports.default = expand;
   var balanced_match_1 = require_commonjs6();
   var escSlash = "\x00SLASH" + Math.random().toFixed(16) + "\x00";
   var escOpen = "\x00OPEN" + Math.random().toFixed(16) + "\x00";
@@ -100226,5 +100227,5 @@ export {
   run
 };
 
-//# debugId=9ADDA684CEF10AD764756E2164756E21
+//# debugId=B21C67524CB3BB1F64756E2164756E21
 //# sourceMappingURL=index.js.map
