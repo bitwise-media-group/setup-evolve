@@ -50355,7 +50355,7 @@ var require_lib11 = __commonJS(function(exports, module) {
 var require_package5 = __commonJS(function(exports, module) {
   module.exports = {
     name: "make-fetch-happen",
-    version: "16.0.1",
+    version: "16.0.2",
     description: "Opinionated, caching, retrying fetch client",
     main: "lib/index.js",
     files: [
@@ -50391,7 +50391,7 @@ var require_package5 = __commonJS(function(exports, module) {
       "@gar/promise-retry": "^1.0.0",
       "@npmcli/agent": "^5.0.0",
       "@npmcli/redact": "^5.0.0",
-      cacache: "^21.0.0",
+      cacache: "^21.0.2",
       "http-cache-semantics": "^4.1.1",
       minipass: "^7.0.2",
       "minipass-fetch": "^6.0.0",
@@ -50403,7 +50403,7 @@ var require_package5 = __commonJS(function(exports, module) {
     },
     devDependencies: {
       "@npmcli/eslint-config": "^7.0.0",
-      "@npmcli/template-oss": "5.1.0",
+      "@npmcli/template-oss": "5.1.1",
       nock: "^13.2.4",
       "safe-buffer": "^5.2.1",
       "standard-version": "^9.3.2",
@@ -50424,7 +50424,7 @@ var require_package5 = __commonJS(function(exports, module) {
     },
     templateOSS: {
       "//@npmcli/template-oss": "This file is partially managed by @npmcli/template-oss. Edits may be overwritten.",
-      version: "5.1.0",
+      version: "5.1.1",
       publish: "true"
     }
   };
@@ -100227,5 +100227,5 @@ export {
   run
 };
 
-//# debugId=B21C67524CB3BB1F64756E2164756E21
+//# debugId=CE22AF2DA48FC5CF64756E2164756E21
 //# sourceMappingURL=index.js.map
