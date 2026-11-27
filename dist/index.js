@@ -96077,7 +96077,7 @@ function expand2(template, context) {
       }
       expression.split(/,/g).forEach(function(variable) {
         var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-        values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
+        values.push(...getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
       });
       if (operator && operator !== "+") {
         var separator = ",";
@@ -100227,5 +100227,5 @@ export {
   run
 };
 
-//# debugId=CE22AF2DA48FC5CF64756E2164756E21
+//# debugId=CDE11702C183F02664756E2164756E21
 //# sourceMappingURL=index.js.map
