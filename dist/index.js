@@ -28002,6 +28002,83 @@ var require_asn1 = __commonJS(function(exports) {
   } });
 });
 
+// node_modules/@sigstore/core/dist/ed25519.js
+var require_ed25519 = __commonJS(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.ED25519_D = undefined;
+  exports.isEd25519Key = isEd25519Key;
+  exports.assertValidEd25519Key = assertValidEd25519Key;
+  exports.isValidEd25519Key = isValidEd25519Key;
+  exports.isValidEd25519Signature = isValidEd25519Signature;
+  exports.isValidEd25519Point = isValidEd25519Point;
+  var ED25519_P = (BigInt(1) << BigInt(255)) - BigInt(19);
+  exports.ED25519_D = mod(-BigInt(121665) * modPow(BigInt(121666), ED25519_P - BigInt(2), ED25519_P), ED25519_P);
+  var ED25519_ORDER_8_Y = BigInt("0x7a03ac9277fdc74ec6cc392cfa53202a0f67100d760b3cba4fd84d3d706a17c7");
+  var ED25519_SMALL_ORDER_Y = new Set([
+    BigInt(0),
+    BigInt(1),
+    ED25519_P - BigInt(1),
+    ED25519_ORDER_8_Y,
+    ED25519_P - ED25519_ORDER_8_Y
+  ]);
+  function isEd25519Key(key) {
+    return key.asymmetricKeyType === "ed25519";
+  }
+  function assertValidEd25519Key(key) {
+    if (!isValidEd25519Key(key)) {
+      throw new Error("invalid Ed25519 public key: small-order, non-canonical or off-curve point");
+    }
+  }
+  function isValidEd25519Key(key) {
+    const spki = key.export({ format: "der", type: "spki" });
+    if (spki.length !== 44) {
+      return false;
+    }
+    return isValidEd25519Point(spki.subarray(12));
+  }
+  function isValidEd25519Signature(signature) {
+    return signature.length === 64 && isValidEd25519Point(signature.subarray(0, 32));
+  }
+  function isValidEd25519Point(encoded) {
+    if (encoded.length !== 32) {
+      return false;
+    }
+    let y = BigInt(0);
+    for (let i = 31;i >= 0; i--) {
+      const byte = i === 31 ? encoded[i] & 127 : encoded[i];
+      y = y << BigInt(8) | BigInt(byte);
+    }
+    if (y >= ED25519_P) {
+      return false;
+    }
+    if (ED25519_SMALL_ORDER_Y.has(y)) {
+      return false;
+    }
+    const y2 = mod(y * y, ED25519_P);
+    const u = mod(y2 - BigInt(1), ED25519_P);
+    const v = mod(exports.ED25519_D * y2 + BigInt(1), ED25519_P);
+    const x2 = mod(u * modPow(v, ED25519_P - BigInt(2), ED25519_P), ED25519_P);
+    return modPow(x2, (ED25519_P - BigInt(1)) / BigInt(2), ED25519_P) === BigInt(1);
+  }
+  function mod(a, m) {
+    const r = a % m;
+    return r >= BigInt(0) ? r : r + m;
+  }
+  function modPow(base, exp, m) {
+    let result = BigInt(1);
+    let b = mod(base, m);
+    let e = exp;
+    while (e > BigInt(0)) {
+      if (e & BigInt(1)) {
+        result = result * b % m;
+      }
+      b = b * b % m;
+      e >>= BigInt(1);
+    }
+    return result;
+  }
+});
+
 // node_modules/@sigstore/core/dist/crypto.js
 var require_crypto = __commonJS(function(exports) {
   var __importDefault = exports && exports.__importDefault || function(mod) {
@@ -28013,31 +28090,52 @@ var require_crypto = __commonJS(function(exports) {
   exports.verify = verify;
   exports.bufferEqual = bufferEqual;
   var crypto_1 = __importDefault(__require("crypto"));
+  var ed25519_1 = require_ed25519();
   function createPublicKey(key, type = "spki") {
+    let keyObject;
     if (typeof key === "string") {
       if (key.startsWith("-----")) {
-        return crypto_1.default.createPublicKey(key);
+        keyObject = crypto_1.default.createPublicKey(key);
       } else {
-        return crypto_1.default.createPublicKey({
+        keyObject = crypto_1.default.createPublicKey({
           key: Buffer.from(key, "base64"),
           format: "der",
           type
         });
       }
     } else {
-      return crypto_1.default.createPublicKey({ key, format: "der", type });
+      keyObject = crypto_1.default.createPublicKey({ key, format: "der", type });
     }
+    if ((0, ed25519_1.isEd25519Key)(keyObject)) {
+      (0, ed25519_1.assertValidEd25519Key)(keyObject);
+    }
+    return keyObject;
   }
   function digest(algorithm, ...data) {
     const hash = crypto_1.default.createHash(algorithm);
     for (const d of data) {
-      hash.update(d);
+      if (typeof d === "string" || ArrayBuffer.isView(d)) {
+        hash.update(d);
+      } else {
+        hash.update(new Uint8Array(d));
+      }
     }
     return hash.digest();
   }
   function verify(data, key, signature, algorithm) {
     try {
-      return crypto_1.default.verify(algorithm, data, key, signature);
+      const keyObject = key instanceof crypto_1.default.KeyObject ? key : crypto_1.default.createPublicKey(key);
+      if ((0, ed25519_1.isEd25519Key)(keyObject) && (!(0, ed25519_1.isValidEd25519Key)(keyObject) || !(0, ed25519_1.isValidEd25519Signature)(signature))) {
+        return false;
+      }
+      let verificationAlgorithm = algorithm;
+      if (verificationAlgorithm === undefined) {
+        const keyType = keyObject.asymmetricKeyType;
+        if (keyType === "ec" || keyType === "rsa") {
+          verificationAlgorithm = "sha256";
+        }
+      }
+      return crypto_1.default.verify(verificationAlgorithm, data, keyObject, signature);
     } catch (e) {
       return false;
     }
@@ -57648,6 +57746,12 @@ var require_message2 = __commonJS(function(exports) {
       return this.compareDigest(digest);
     }
     verifySignature(key) {
+      if (key.asymmetricKeyType === "ed25519") {
+        if (!this.artifact) {
+          return false;
+        }
+        return core_1.crypto.verify(this.artifact, key, this.signature);
+      }
       return core_1.crypto.verify(this.artifact, key, this.signature, this.hashAlgorithm);
     }
   }
@@ -100227,5 +100331,5 @@ export {
   run
 };
 
-//# debugId=CDE11702C183F02664756E2164756E21
+//# debugId=BC472796FAEB10A964756E2164756E21
 //# sourceMappingURL=index.js.map
