@@ -121,7 +121,7 @@
 
     "@sigstore/bundle": ["@sigstore/bundle@5.0.1", "", { "dependencies": { "@sigstore/protobuf-specs": "^0.5.2" } }, "sha512-7q8DOObFzN+/eQrvL2O0cylDp95ssgBCAomQxSYfGAMO9+q4xceRbg0L3L0G2/8NyideoYCs7HuVxWKCdn/maQ=="],
 
-    "@sigstore/core": ["@sigstore/core@4.0.1", "", {}, "sha512-9v5hRjujn5NXq8o7XFEUgLyAtdr5Iisb4pzM05u3K61IS5q3hP3luWAndk0RkPPLTUFoTbg7Vb84UQ1ZQeajWQ=="],
+    "@sigstore/core": ["@sigstore/core@4.0.2", "", {}, "sha512-wf6WUZeztW4jUqCqFoofr9kcIKbDjhgIU1nddbb8H7Iwug36vOJkcvS5/6inmjjlLqgsHiHkfYh0ty0WQNBVTA=="],
 
     "@sigstore/protobuf-specs": ["@sigstore/protobuf-specs@0.5.2", "", {}, "sha512-SQqvFMt4V78fdjcDdYX6HbiVSOR4QK3ZgwCa2KOsopAgPIHy1rU5UDUmzLl02r5oyyaYcYHR1hpwDRk/yUe+Mw=="],
 
@@ -129,7 +129,7 @@
 
     "@sigstore/tuf": ["@sigstore/tuf@5.0.1", "", { "dependencies": { "@sigstore/protobuf-specs": "^0.5.2", "tuf-js": "^6.0.2" } }, "sha512-ofwYu9iXeMm85zPh0cauUXzXtIFNfHI1o9Ux1e0Eil6shsbx+8bAe58fhiU1FcHdOIxOkyDhZzD6Gu6uPnzoUg=="],
 
-    "@sigstore/verify": ["@sigstore/verify@4.1.3", "", { "dependencies": { "@sigstore/bundle": "^5.0.1", "@sigstore/core": "^4.0.1", "@sigstore/protobuf-specs": "^0.5.2" } }, "sha512-V2ik+fLz2YTZOV4USVnjvLJWDjmBMWi7XhFR8CNp1tj7y09OrogDxPZZdbSWXIA7IpenJTyGukIgF2CFtH/8rA=="],
+    "@sigstore/verify": ["@sigstore/verify@4.1.4", "", { "dependencies": { "@sigstore/bundle": "^5.0.1", "@sigstore/core": "^4.0.2", "@sigstore/protobuf-specs": "^0.5.2" } }, "sha512-5QPG+E4Lakpqy2IBNTiz7Bf/rVtu8J/z6B6p6QGzjTVnDTwHECAAz/9s9p8DweX4iZ6tvNG3EeQETJZZco4M1A=="],
 
     "@tufjs/canonical-json": ["@tufjs/canonical-json@2.0.0", "", {}, "sha512-yVtV8zsdo8qFHe+/3kw81dSLyF7D576A5cCFCi4X7B39tWT7SekaEFUnvnWJHz+9qO7qJTah1JbrDjWKqFtdWA=="],
 
